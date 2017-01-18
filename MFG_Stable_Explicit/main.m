@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='december_16_Ex1'
+jobstring='test' %'january_17_Ex10'
 
 %December 16th: changing the scheme for the boundaries.
 
@@ -46,7 +46,7 @@ jobstring='december_16_Ex1'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
-threshold=10^(-10) %for checking if sum is 1, and alpha<alpha_max, V>0
+threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
 bound_alpha=true
 c=2
@@ -76,12 +76,12 @@ alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
-beta=1.5
+beta=0.9
 
 num_time_points=2501
 num_y=21 %needs to be odd
 
-delta_x=0.1
+delta_x=0.5
 delta_y=0.025
 
 box_r=round(1.0/delta_x)
@@ -350,7 +350,7 @@ for n=1:num_time_points-1
     mu_x(1,:)=0;
     mu_x(1,1:ceil(num_y/2)-1)=mu_curr(2,1:ceil(num_y/2)-1);
     mu_x(num_x,:)=0;
-    mu_x(num_x,ceil(num_y/2)+1:num_y)=-mu_curr(num_x,ceil(num_y/2)+1:num_y);
+    mu_x(num_x,ceil(num_y/2)+1:num_y)=-mu_curr(num_x-1,ceil(num_y/2)+1:num_y);
     
     left(:,:)=V_curr-shift(V_curr,-1,2);
     right(:,:)=shift(V_curr,1,2)-V_curr;
