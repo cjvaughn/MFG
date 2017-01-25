@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='january_25_Ex11'
+jobstring='january_25_Ex45'
 
 %December 16th: changing the scheme for the boundaries.
 
@@ -77,9 +77,9 @@ alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
-beta=1.5
+beta=0.8
 
-num_time_points=1001 %todo
+num_time_points=2501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
@@ -213,6 +213,7 @@ for counter=1:num_time_points-1
 
     F2=ifftn(fftn(upad).*fftn_vpad);
     F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
+    F=F.^2; %Nourian cost
 
     mu_curr=squeeze(mu(n,:,:));
     V_curr=squeeze(V(n+1,:,:));
