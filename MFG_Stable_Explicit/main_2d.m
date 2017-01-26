@@ -2,6 +2,9 @@ clearvars
 tic
 jobstring='january_24_Ex1_2d'
 
+%January 26th: putting all versions of cost in this folder, with booleans
+%cost_unsq_norm, cost_unsq_norm_2, cost_unsq_norm_3, and cost_Nourian
+
 %December 16th: made this scheme stable like in the 1d code
 
 %December 8th: making corresponding changes from 1d code:
@@ -44,6 +47,11 @@ jobstring='january_24_Ex1_2d'
 % added calculation to extend_x further for initial_box or initial_2_boxes
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
+
+cost_unsq_norm=false
+cost_unsq_norm_2=false
+cost_unsq_norm_3=false
+cost_Nourian=false
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
@@ -178,11 +186,29 @@ if value~=1
     value
 end
     
-% old_mu=mu-ones(num_time_points,num_x,num_y,num_x,num_y);
-v=get_v_matrix_2d(num_x,num_y,delta_x,delta_y,beta);
-vpad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
-vpad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1,1:2*num_y-1)=v;
-fftn_vpad=fftn(vpad);
+if cost_unsq_norm
+    v=get_v_matrix_2d_unsq_norm(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_unsq_norm_2
+    v=get_v_matrix_2d_unsq_norm_2(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_unsq_norm_3
+    v=get_v_matrix_2d_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_Nourian
+    [v1,v2]=get_v_matrix_2d_Nourian(num_x,num_y,delta_x,delta_y,beta);
+else
+    v=get_v_matrix_2d(num_x,num_y,delta_x,delta_y,beta);
+end
+if cost_Nourian
+    v1pad=zeros(3*num_x-2,3*num_y-2,3*num_x-2);
+    v1pad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1)=v1;
+    fftn_v1pad=fftn(v1pad);
+    v2pad=zeros(3*num_x-2,3*num_x-2,3*num_y-2);
+    v2pad(1:2*num_x-1,1:2*num_x-1,1:2*num_y-1)=v2;
+    fftn_v2pad=fftn(v2pad);
+else
+    vpad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
+    vpad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1,1:2*num_y-1)=v;
+    fftn_vpad=fftn(vpad);
+end
 
 mu_diff_max=1;
 old_alpha=zeros(num_time_points,num_x,num_y);
@@ -205,11 +231,26 @@ for counter=1:num_time_points-1
     t_n=t_grid(n);
     u(:,:,:,:)=mu(n,:,:,:,:)*(delta_x*delta_y)^2; %u is (num_x,num_y), v is (2*num_x-1,2*num_y-1), output=(3*num_x-2,3*num_y-2)
     
-    upad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
-    upad(1:num_x,1:num_y,1:num_x,1:num_y)=u;
+    if cost_Nourian
+        u1=squeeze(sum(u,4));
+        u2=squeeze(sum(u,2));
+        u1pad=zeros(3*num_x-2,3*num_y-2,3*num_x-2);
+        u1pad(1:num_x,1:num_y,1:num_x)=u1;
+        u2pad=zeros(3*num_x-2,3*num_x-2,3*num_y-2);
+        u2pad(1:num_x,1:num_x,1:num_y)=u2;
 
-    F2=ifftn(fftn(upad).*fftn_vpad);
-    F=F2(num_x:2*num_x-1,num_y:2*num_y-1,num_x:2*num_x-1,num_y:2*num_y-1);
+        F2_1=ifftn(fftn(u1pad).*fftn_v1pad);
+        F_1=F2_1(num_x:2*num_x-1,num_y:2*num_y-1,num_x:2*num_x-1);
+        F2_2=ifftn(fftn(u2pad).*fftn_v2pad);
+        F_2=F2_2(num_x:2*num_x-1,num_x:2*num_x-1,num_y:2*num_y-1);
+        F=F_1.^2+F_2.^2;
+    else
+        upad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
+        upad(1:num_x,1:num_y,1:num_x,1:num_y)=u;
+
+        F2=ifftn(fftn(upad).*fftn_vpad);
+        F=F2(num_x:2*num_x-1,num_y:2*num_y-1,num_x:2*num_x-1,num_y:2*num_y-1);
+    end
 
     mu_curr=squeeze(mu(n,:,:,:,:));
     V_curr=squeeze(V(n+1,:,:,:,:));

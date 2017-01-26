@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='test' %'january_25_Ex52'
+jobstring='january_26_Ex7'
 
 %January 26th: putting all versions of cost in this folder, with booleans
 %cost_unsq_norm, cost_unsq_norm_2, cost_unsq_norm_3, and cost_Nourian
@@ -55,13 +55,13 @@ jobstring='test' %'january_25_Ex52'
 cost_unsq_norm=false
 cost_unsq_norm_2=false
 cost_unsq_norm_3=false
-cost_Nourian=false
+cost_Nourian=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
-bound_alpha=true
-c=2
-lambda=0.5 %ToDo
+bound_alpha=false
+c=3
+lambda=1/3 %ToDo
 lambda2=0
 
 initial_mu_guess=false
@@ -84,13 +84,13 @@ initial_skew3=true %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 
 num_iterations=40 %TODO
 
-alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=10         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
-beta=0.5
+beta=0
 
-num_time_points=5001 %todo
+num_time_points=10001 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5

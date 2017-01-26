@@ -13,7 +13,7 @@ y_min=-(num_y-1)/2*delta_y;
 y_max=(num_y-1)/2*delta_y;
 y_grid=linspace(y_min,y_max,num_y);
 
-mu=1/(2*pi*s_2)^(0.5)*exp(-(y_grid).^2/(2*s_2));
+mu=1/(2*pi*s_2)^(0.5)*exp(-(y_grid).^2/(2*s_2))*delta_y;
 
 if normalize
     mu=mu/sum(mu);
