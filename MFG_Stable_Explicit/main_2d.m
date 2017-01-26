@@ -2,7 +2,7 @@ clearvars
 tic
 jobstring='january_24_Ex1_2d'
 
-%December 16th: ToDo: make this code new stable scheme like 1d code
+%December 16th: made this scheme stable like in the 1d code
 
 %December 8th: making corresponding changes from 1d code:
     %December 7th: continuing to correct the use of alpha
@@ -186,6 +186,8 @@ fftn_vpad=fftn(vpad);
 
 mu_diff_max=1;
 old_alpha=zeros(num_time_points,num_x,num_y);
+cost_alpha=zeros(num_time_points-1,1);
+cost_integral=zeros(num_time_points-1,1);
 %Iteration:
 while(mu_diff_max>0 && K<num_iterations+1) %K<2 means 1 iteration
 old_mu=mu;
@@ -280,6 +282,8 @@ for counter=1:num_time_points-1
         alpha_2_diff_real(mu_curr>0)=alpha_2_diff(mu_curr>0);
         max_curr=max(max(max(max(alpha_2_diff_real))));
         max_diff_alpha_2=max(max_curr,max_diff_alpha_2);
+        cost_alpha(n)=sum(sum(sum(sum(1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)))));
+        cost_integral(n)=sum(sum(sum(sum(c*lambda*F(:,:)))));
     end
 
     alpha_norm=sqrt(alpha_1.*alpha_1+alpha_2.*alpha_2);
@@ -528,6 +532,8 @@ save(strcat(jobstring,'_mu12_short.mat'),'mu12_short','-v7.3')
 save(strcat(jobstring,'_mu13_short.mat'),'mu13_short','-v7.3')
 save(strcat(jobstring,'_mu24_short.mat'),'mu24_short','-v7.3')
 save(strcat(jobstring,'_mu34_short.mat'),'mu34_short','-v7.3')
+save(strcat(jobstring,'_cost_alpha.mat'),'cost_alpha')
+save(strcat(jobstring,'_cost_integral.mat'),'cost_integral')
 
 
 % save(strcat(jobstring,'_final_mu.mat'),'final_mu')

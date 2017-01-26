@@ -1,6 +1,12 @@
 clearvars
 tic
-jobstring='january_25_Ex11'
+jobstring='test' %'january_25_Ex52'
+
+%January 26th: putting all versions of cost in this folder, with booleans
+%cost_unsq_norm, cost_unsq_norm_2, cost_unsq_norm_3, and cost_Nourian
+
+%January 25th: made different version of the cost in other folders:
+%MFG_Stable_Explicit_Nourian, ...
 
 %December 16th: changing the scheme for the boundaries.
 
@@ -46,6 +52,11 @@ jobstring='january_25_Ex11'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
+cost_unsq_norm=false
+cost_unsq_norm_2=false
+cost_unsq_norm_3=false
+cost_Nourian=false
+
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
 bound_alpha=true
@@ -77,9 +88,9 @@ alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
-beta=1.5
+beta=0.5
 
-num_time_points=1001 %todo
+num_time_points=5001 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
@@ -185,13 +196,25 @@ if value~=1
     value
 end
 
-v=get_v_matrix(num_x,num_y,delta_x,delta_y,beta);
+if cost_unsq_norm
+    v=get_v_matrix_unsq_norm(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_unsq_norm_2
+    v=get_v_matrix_unsq_norm_2(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_unsq_norm_3
+    v=get_v_matrix_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_Nourian
+    v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
+else
+    v=get_v_matrix(num_x,num_y,delta_x,delta_y,beta);
+end
 vpad=zeros(3*num_x-2,3*num_y-2);
 vpad(1:2*num_x-1,1:2*num_y-1)=v;
 fftn_vpad=fftn(vpad);
 
 mu_diff_max=1;
 old_alpha=zeros(num_time_points,num_x,num_y);
+cost_alpha=zeros(num_time_points-1,1);
+cost_integral=zeros(num_time_points-1,1);
 %Iteration:
 while(mu_diff_max>0 && K<num_iterations+1) %K<2 means 1 iteration
 old_mu=mu;
@@ -213,6 +236,9 @@ for counter=1:num_time_points-1
 
     F2=ifftn(fftn(upad).*fftn_vpad);
     F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
+    if cost_Nourian
+        F=F.^2;
+    end
 
     mu_curr=squeeze(mu(n,:,:));
     V_curr=squeeze(V(n+1,:,:));
@@ -276,6 +302,8 @@ for counter=1:num_time_points-1
         alpha_diff_real(mu_curr>0)=alpha_diff(mu_curr>0);
         max_curr=max(max(alpha_diff_real));
         max_diff_alpha=max(max_curr,max_diff_alpha);
+        cost_alpha(n)=sum(sum(1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)));
+        cost_integral(n)=sum(sum(c*lambda*F(:,:)));
     end
 
     max_alpha=max(max_alpha,max(max(abs(alpha))));
@@ -465,6 +493,8 @@ save(strcat(jobstring,'_final_mu.mat'),'final_mu')
 initial_V=squeeze(V(1,:,:));
 save(strcat(jobstring,'_initial_V.mat'),'initial_V')
 %save(strcat(jobstring,'_V.mat'),'V','-v7.3')
+save(strcat(jobstring,'_cost_alpha.mat'),'cost_alpha')
+save(strcat(jobstring,'_cost_integral.mat'),'cost_integral')
 
 output_freq=100;
 num_times=floor(num_time_points/output_freq)+1;
