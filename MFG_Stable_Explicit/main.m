@@ -1,6 +1,8 @@
 clearvars
 tic
-jobstring='january_26_Ex7'
+jobstring='january_31_Ex29'
+
+%January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
 %January 26th: putting all versions of cost in this folder, with booleans
 %cost_unsq_norm, cost_unsq_norm_2, cost_unsq_norm_3, and cost_Nourian
@@ -59,7 +61,7 @@ cost_Nourian=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
-bound_alpha=false
+bound_alpha=true
 c=3
 lambda=1/3 %ToDo
 lambda2=0
@@ -80,18 +82,20 @@ initial_5_points=false %birds are either at (-1,0) (-0.5,0) (0,0) (.5,0) or (1,0
 initial_5_points_xandv=false %birds are either at (-1,.1) (-1,-.1) (0,0) (1,.1) or (1,-.1) (when box_r=100)
 initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
-initial_skew3=true %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
+initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
+initial_skew4=true
 
-num_iterations=40 %TODO
+num_iterations=20 %TODO
 
-alpha_max=10         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
-beta=0
+rho_0=0; %ToDo, make 0
+beta=100
 
-num_time_points=10001 %todo
-num_y=41 %needs to be odd
+num_time_points=1201 %todo
+num_y=121 %needs to be odd
 
 delta_x=0.5
 delta_y=0.05
@@ -129,6 +133,8 @@ elseif initial_skew2
     num_x_one_side=num_x_one_side+box_r;
 elseif initial_skew3
     num_x_one_side=num_x_one_side;
+elseif initial_skew4
+    num_x_one_side=num_x_one_side+box_r;
 end
 num_x=num_x_one_side*2+1;
 num_x
@@ -187,6 +193,9 @@ elseif initial_skew2
 elseif initial_skew3
     mu(:,ceil(num_x/2),ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
     mu(:,ceil(num_x/2),ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
+elseif initial_skew4
+    mu(:,ceil(num_x/2)-box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
+    mu(:,ceil(num_x/2)+box_r,ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
 else
     mu(:,ceil(num_x/2),ceil(num_y/2))=1/(delta_x*delta_y); %puts everything at the origin.
 end
@@ -291,9 +300,9 @@ for counter=1:num_time_points-1
     %%%% Using convolution
     %Linear, using the previous estimate for V to approximate gradient V
     if K>1
-        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2);
+        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
     else
-        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(alpha.*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2);
+        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(alpha.*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
     end
     
     if K>1
@@ -371,6 +380,9 @@ elseif initial_skew2
 elseif initial_skew3
     mu(1,ceil(num_x/2),ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
     mu(1,ceil(num_x/2),ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
+elseif initial_skew4
+    mu(1,ceil(num_x/2)-box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
+    mu(1,ceil(num_x/2)+box_r,ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
 else
     mu(1,ceil(num_x/2),ceil(num_y/2))=1/(delta_x*delta_y); %puts everything at the origin.
 end
@@ -496,7 +508,7 @@ save(strcat(jobstring,'_initial_V.mat'),'initial_V')
 save(strcat(jobstring,'_cost_alpha.mat'),'cost_alpha')
 save(strcat(jobstring,'_cost_integral.mat'),'cost_integral')
 
-output_freq=100;
+output_freq=1000;
 num_times=floor(num_time_points/output_freq)+1;
 mu_short=zeros(num_x,num_y,num_times);
 for i=1:num_times

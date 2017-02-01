@@ -5,7 +5,9 @@ normalize=true
 sigma=0.1
 s_2=sigma^2/2
 
-num_y=41 %needs to be odd
+s_2=20*sigma^2
+
+num_y=121 %needs to be odd
 
 delta_y=0.05
 
@@ -20,6 +22,6 @@ if normalize
 end
 
 plot(y_grid,mu)
-title('mu(y1) stationary, beta=0')
+title('mu(y1,T/2) finite T, beta=0')
 xlabel('y1')
 ylabel('mu(y1)')

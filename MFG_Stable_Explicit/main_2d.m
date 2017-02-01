@@ -2,6 +2,8 @@ clearvars
 tic
 jobstring='january_24_Ex1_2d'
 
+%January 27th: added rho_0 to HJB (can set to 0 to not have it)
+
 %January 26th: putting all versions of cost in this folder, with booleans
 %cost_unsq_norm, cost_unsq_norm_2, cost_unsq_norm_3, and cost_Nourian
 
@@ -83,6 +85,7 @@ alpha_max=0.1 %todo, 1
 alpha_min=-alpha_max
 
 sigma=0 %0.1 %ToDo!!!!
+rho_0=sigma^2; %ToDo, make 0
 beta=0.6
 
 num_time_points=501
@@ -307,9 +310,9 @@ for counter=1:num_time_points-1
     %%%% Using convolution 
     %Linear, using the previous estimate for V to approximate gradient V
     if K>1
-        V(n,:,:,:,:)=V_curr+delta_t*(sigma^2/2*(V_yy1+V_yy2)/(delta_y)^2+(y_j1.*V_x1+y_j2.*V_x2)/delta_x+alpha_1.*V_y1/delta_y+alpha_2.*V_y2/delta_y+1/2*c*(1-lambda)*(squeeze(old_alpha_1(n,:,:,:,:)).*alpha_1+squeeze(old_alpha_2(n,:,:,:,:)).*alpha_2)+c*lambda*F(:,:,:,:));
+        V(n,:,:,:,:)=V_curr+delta_t*(sigma^2/2*(V_yy1+V_yy2)/(delta_y)^2+(y_j1.*V_x1+y_j2.*V_x2)/delta_x+alpha_1.*V_y1/delta_y+alpha_2.*V_y2/delta_y+1/2*c*(1-lambda)*(squeeze(old_alpha_1(n,:,:,:,:)).*alpha_1+squeeze(old_alpha_2(n,:,:,:,:)).*alpha_2)+c*lambda*F(:,:,:,:)-rho_0);
     else
-        V(n,:,:,:,:)=V_curr+delta_t*(sigma^2/2*(V_yy1+V_yy2)/(delta_y)^2+(y_j1.*V_x1+y_j2.*V_x2)/delta_x+alpha_1.*V_y1/delta_y+alpha_2.*V_y2/delta_y+1/2*c*(1-lambda)*(alpha_1.*alpha_1+alpha_2.*alpha_2)+c*lambda*F(:,:,:,:));
+        V(n,:,:,:,:)=V_curr+delta_t*(sigma^2/2*(V_yy1+V_yy2)/(delta_y)^2+(y_j1.*V_x1+y_j2.*V_x2)/delta_x+alpha_1.*V_y1/delta_y+alpha_2.*V_y2/delta_y+1/2*c*(1-lambda)*(alpha_1.*alpha_1+alpha_2.*alpha_2)+c*lambda*F(:,:,:,:)-rho_0);
     end
     
     if K>1
