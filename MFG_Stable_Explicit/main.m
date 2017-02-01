@@ -1,6 +1,8 @@
 clearvars
 tic
-jobstring='january_31_Ex29'
+jobstring='test' %'january_31_Ex29'
+
+%February 1st: added boolean bing_sun_alpha (see blue book page 7)
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
@@ -54,6 +56,8 @@ jobstring='january_31_Ex29'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
+bing_sun_alpha=true
+
 cost_unsq_norm=false
 cost_unsq_norm_2=false
 cost_unsq_norm_3=false
@@ -92,10 +96,10 @@ alpha_min=-alpha_max
 
 sigma=0.1
 rho_0=0; %ToDo, make 0
-beta=100
+beta=0
 
 num_time_points=1201 %todo
-num_y=121 %needs to be odd
+num_y=41 %needs to be odd
 
 delta_x=0.5
 delta_y=0.05
@@ -267,8 +271,14 @@ for counter=1:num_time_points-1
     right(:,:)=shift(V_curr,1,2)-V_curr;
     left(:,:)=V_curr-shift(V_curr,-1,2);
     V_y=zeros(num_x,num_y);
-    V_y(left<0 & right<0)=right(left<0 & right<0);
-    V_y(left>0 & right>0)=left(left>0 & right>0);
+    if bing_sun_alpha
+        central=left+right;
+        V_y(central>0)=left(central>0);
+        V_y(central<0)=right(central<0);
+    else
+        V_y(left<0 & right<0)=right(left<0 & right<0);
+        V_y(left>0 & right>0)=left(left>0 & right>0);
+    end
     %New Scheme BC:
     V_y(:,1)=0;
     V_y(:,num_y)=0;
@@ -413,10 +423,16 @@ for n=1:num_time_points-1
     
     left(:,:)=V_curr-shift(V_curr,-1,2);
     right(:,:)=shift(V_curr,1,2)-V_curr;
-    
     V_y=zeros(num_x,num_y);
-    V_y(left<0 & right<0)=right(left<0 & right<0);
-    V_y(left>0 & right>0)=left(left>0 & right>0);
+    if bing_sun_alpha
+        central=left+right;
+        V_y(central>0)=left(central>0);
+        V_y(central<0)=right(central<0);
+    else
+        V_y(left<0 & right<0)=right(left<0 & right<0);
+        V_y(left>0 & right>0)=left(left>0 & right>0);
+    end
+    %New Scheme BC: 
     V_y(:,1)=0;
     V_y(:,num_y)=0;
     
