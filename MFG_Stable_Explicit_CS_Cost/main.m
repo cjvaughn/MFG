@@ -1,6 +1,8 @@
 clearvars
 tic
-jobstring='february_1_Ex1'
+jobstring='february_1_Ex4'
+
+%February 1st: making a completely new cost
 
 %February 1st: added boolean bing_sun_alpha (see blue book page 7)
 
@@ -56,19 +58,10 @@ jobstring='february_1_Ex1'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
-bing_sun_alpha=false
-
-cost_unsq_norm=false
-cost_unsq_norm_2=false
-cost_unsq_norm_3=false
-cost_Nourian=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
-bound_alpha=true
-c=3
-lambda=1/3 %ToDo
-lambda2=0
+bound_alpha=false
 
 initial_mu_guess=false
 
@@ -89,16 +82,16 @@ initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=10
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 initial_skew4=true
 
-num_iterations=40 %TODO
+num_iterations=20 %TODO
 
-alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
 rho_0=0; %ToDo, make 0
 beta=0
 
-num_time_points=201 %7501 %todo
+num_time_points=2601 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
@@ -209,25 +202,15 @@ if value~=1
     value
 end
 
-if cost_unsq_norm
-    v=get_v_matrix_unsq_norm(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_unsq_norm_2
-    v=get_v_matrix_unsq_norm_2(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_unsq_norm_3
-    v=get_v_matrix_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_Nourian
-    v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
-else
-    v=get_v_matrix(num_x,num_y,delta_x,delta_y,beta);
-end
+
+v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
 vpad=zeros(3*num_x-2,3*num_y-2);
 vpad(1:2*num_x-1,1:2*num_y-1)=v;
 fftn_vpad=fftn(vpad);
 
 mu_diff_max=1;
 old_alpha=zeros(num_time_points,num_x,num_y);
-cost_alpha=zeros(num_time_points-1,1);
-cost_integral=zeros(num_time_points-1,1);
+old_F=zeros(num_time_points,num_x,num_y);
 %Iteration:
 while(mu_diff_max>0 && K<num_iterations+1) %K<2 means 1 iteration
 old_mu=mu;
@@ -249,9 +232,6 @@ for counter=1:num_time_points-1
 
     F2=ifftn(fftn(upad).*fftn_vpad);
     F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
-    if cost_Nourian
-        F=F.^2;
-    end
 
     mu_curr=squeeze(mu(n,:,:));
     V_curr=squeeze(V(n+1,:,:));
@@ -271,36 +251,20 @@ for counter=1:num_time_points-1
     right(:,:)=shift(V_curr,1,2)-V_curr;
     left(:,:)=V_curr-shift(V_curr,-1,2);
     V_y=zeros(num_x,num_y);
-    if bing_sun_alpha
-        central=left+right;
-        V_y(central>0)=left(central>0);
-        V_y(central<0)=right(central<0);
-    else
-        V_y(left<0 & right<0)=right(left<0 & right<0);
-        V_y(left>0 & right>0)=left(left>0 & right>0);
-    end
+
+    alpha_approx_left=-left/(2*delta_y)+F;
+    alpha_approx_right=-right/(2*delta_y)+F;
+    V_y(alpha_approx_left<0 & alpha_approx_right<0)=left(alpha_approx_left<0 & alpha_approx_right<0);
+    V_y(alpha_approx_left>0 & alpha_approx_right>0)=right(alpha_approx_left>0 & alpha_approx_right>0);
     %New Scheme BC:
     V_y(:,1)=0;
     V_y(:,num_y)=0;
     
-    alpha=-V_y/(c*(1-lambda-lambda2)*delta_y);
+    alpha=-V_y/(2*delta_y)+F;
     if bound_alpha
         alpha=min(alpha,alpha_max);
         alpha=max(alpha,alpha_min);
     end
-    
-    if lambda==1
-        if V_y>0
-            alpha=alpha_min;
-        elseif V_y<0
-            alpha=alpha_max;
-        else
-            alpha=0;
-        end
-    end
-    
-    %theta_t=0.1*delta_t*n;
-    theta_t=0.1*sin(delta_t*n);
     
 %     cost=(x_i-theta_t).^2;
 %     'here'
@@ -309,11 +273,11 @@ for counter=1:num_time_points-1
     
     %%%% Using convolution
     %Linear, using the previous estimate for V to approximate gradient V
-    if K>1
-        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
-    else
-        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(alpha.*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
-    end
+    %if K>1
+    %    V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/4*(squeeze(old_V_y(n,:,:)).*V_y)/(delta_y^2));
+    %else
+        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/4*(V_y.*V_y)/(delta_y^2));
+    %end
     
     if K>1
         alpha_diff=abs(squeeze(old_alpha(n,:,:))-alpha);
@@ -321,8 +285,6 @@ for counter=1:num_time_points-1
         alpha_diff_real(mu_curr>0)=alpha_diff(mu_curr>0);
         max_curr=max(max(alpha_diff_real));
         max_diff_alpha=max(max_curr,max_diff_alpha);
-        cost_alpha(n)=sum(sum(1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)));
-        cost_integral(n)=sum(sum(c*lambda*F(:,:)));
     end
 
     max_alpha=max(max_alpha,max(max(abs(alpha))));
@@ -401,7 +363,6 @@ for n=1:num_time_points-1
     t_n=t_grid(n);
         
     mu_curr=squeeze(mu(n,:,:));
-    V_curr=squeeze(V(n,:,:));
     
     mu_yy(:,:)=shift(mu_curr,1,2)-2*mu_curr+shift(mu_curr,-1,2); %centered
     %New Scheme BC:
@@ -420,7 +381,7 @@ for n=1:num_time_points-1
     mu_x(1,1:ceil(num_y/2)-1)=mu_curr(2,1:ceil(num_y/2)-1);
     mu_x(num_x,:)=0;
     mu_x(num_x,ceil(num_y/2)+1:num_y)=-mu_curr(num_x-1,ceil(num_y/2)+1:num_y);
-
+    
     alpha=squeeze(old_alpha(n,:,:));
     
     alpha_minus=zeros(num_x,num_y);
@@ -492,8 +453,6 @@ save(strcat(jobstring,'_final_mu.mat'),'final_mu')
 initial_V=squeeze(V(1,:,:));
 save(strcat(jobstring,'_initial_V.mat'),'initial_V')
 %save(strcat(jobstring,'_V.mat'),'V','-v7.3')
-save(strcat(jobstring,'_cost_alpha.mat'),'cost_alpha')
-save(strcat(jobstring,'_cost_integral.mat'),'cost_integral')
 
 output_freq=1000;
 num_times=floor(num_time_points/output_freq)+1;
