@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='february_1_Ex4'
+jobstring='february_2_Ex17'
 
 %February 1st: making a completely new cost
 
@@ -80,7 +80,8 @@ initial_5_points_xandv=false %birds are either at (-1,.1) (-1,-.1) (0,0) (1,.1) 
 initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
-initial_skew4=true
+initial_skew4=false
+initial_skew5=true
 
 num_iterations=20 %TODO
 
@@ -89,16 +90,16 @@ alpha_min=-alpha_max
 
 sigma=0.1
 rho_0=0; %ToDo, make 0
-beta=0
+beta=0.9
 
-num_time_points=2601 %7501 %todo
+num_time_points=2201 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
 delta_y=0.05
 
-box_r=round(1.0/delta_x)
-box_r_y=round(0.6/delta_y)
+box_r=round(10.0/delta_x)
+box_r_y=round(0.1/delta_y)
 
 y_min=-(num_y-1)/2*delta_y;
 y_max=(num_y-1)/2*delta_y;
@@ -131,6 +132,8 @@ elseif initial_skew2
 elseif initial_skew3
     num_x_one_side=num_x_one_side;
 elseif initial_skew4
+    num_x_one_side=num_x_one_side+box_r;
+elseif initial_skew5
     num_x_one_side=num_x_one_side+box_r;
 end
 num_x=num_x_one_side*2+1;
@@ -193,6 +196,9 @@ elseif initial_skew3
 elseif initial_skew4
     mu(:,ceil(num_x/2)-box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
     mu(:,ceil(num_x/2)+box_r,ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
+elseif initial_skew5
+    mu(:,ceil(num_x/2)-box_r,ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
+    mu(:,ceil(num_x/2)+box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
 else
     mu(:,ceil(num_x/2),ceil(num_y/2))=1/(delta_x*delta_y); %puts everything at the origin.
 end
@@ -252,15 +258,15 @@ for counter=1:num_time_points-1
     left(:,:)=V_curr-shift(V_curr,-1,2);
     V_y=zeros(num_x,num_y);
 
-    alpha_approx_left=-left/(2*delta_y)+F;
-    alpha_approx_right=-right/(2*delta_y)+F;
+    alpha_approx_left=-left/(2*delta_y)-F;
+    alpha_approx_right=-right/(2*delta_y)-F;
     V_y(alpha_approx_left<0 & alpha_approx_right<0)=left(alpha_approx_left<0 & alpha_approx_right<0);
     V_y(alpha_approx_left>0 & alpha_approx_right>0)=right(alpha_approx_left>0 & alpha_approx_right>0);
     %New Scheme BC:
     V_y(:,1)=0;
     V_y(:,num_y)=0;
     
-    alpha=-V_y/(2*delta_y)+F;
+    alpha=-V_y/(2*delta_y)-F;
     if bound_alpha
         alpha=min(alpha,alpha_max);
         alpha=max(alpha,alpha_min);
@@ -355,6 +361,9 @@ elseif initial_skew3
 elseif initial_skew4
     mu(1,ceil(num_x/2)-box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
     mu(1,ceil(num_x/2)+box_r,ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
+elseif initial_skew5
+    mu(1,ceil(num_x/2)-box_r,ceil(num_y/2)-box_r_y)=1/(2*delta_x*delta_y);
+    mu(1,ceil(num_x/2)+box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
 else
     mu(1,ceil(num_x/2),ceil(num_y/2))=1/(delta_x*delta_y); %puts everything at the origin.
 end

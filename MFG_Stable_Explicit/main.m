@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='february_1_Ex1'
+jobstring='february_3_Ex1'
 
 %February 1st: added boolean bing_sun_alpha (see blue book page 7)
 
@@ -56,7 +56,7 @@ jobstring='february_1_Ex1'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
-bing_sun_alpha=false
+bing_sun_alpha=false %doesn't work
 
 cost_unsq_norm=false
 cost_unsq_norm_2=false
@@ -65,7 +65,7 @@ cost_Nourian=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
-bound_alpha=true
+bound_alpha=false
 c=3
 lambda=1/3 %ToDo
 lambda2=0
@@ -87,18 +87,18 @@ initial_5_points_xandv=false %birds are either at (-1,.1) (-1,-.1) (0,0) (1,.1) 
 initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
-initial_skew4=true
+initial_skew4=false
 
-num_iterations=40 %TODO
+num_iterations=20 %TODO
 
-alpha_max=0.1         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=0.1
 rho_0=0; %ToDo, make 0
-beta=0
+beta=0.4
 
-num_time_points=201 %7501 %todo
+num_time_points=2601 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
