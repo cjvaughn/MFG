@@ -2,7 +2,7 @@ clearvars
 tic
 jobstring='february_2_Ex17'
 
-%February 1st: making a completely new cost
+%February 1st: making a completely new cost to mimick Cucker Smale/Mordecki
 
 %February 1st: added boolean bing_sun_alpha (see blue book page 7)
 

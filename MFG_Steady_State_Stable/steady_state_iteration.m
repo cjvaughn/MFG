@@ -20,7 +20,7 @@ lambda_cost=1/2
 initial_uniform=false
 initial_center=true
 
-num_iterations=100;
+num_iterations=10;
 
 epsilon=0 %for making it a viscosity solution (noise in x too)
 sigma=0.1
@@ -64,7 +64,9 @@ lambda_history=zeros(num_iterations,1);
 lambda2_history=zeros(num_iterations,1);
 lambda_max_history=zeros(num_iterations,1);
 lambda_min_history=zeros(num_iterations,1);
-diff_history=zeros(num_x*num_y+1,num_iterations);
+r_history=zeros(num_iterations,1);
+r2_history=zeros(num_iterations,1);
+diff_history=zeros(num_x*num_y+2,num_iterations);
 diff2_history=zeros(num_x*num_y,num_iterations);
 diff3_history=zeros(num_x*num_y,num_iterations);
 integral_history=zeros(num_iterations,1);
@@ -80,7 +82,7 @@ old_lambda=lambda;
 
 'Solving HJB'
 %Use mu to solve for V and lambda
-[V,r,lambda,diff]=solve_HJB_extra_eq(mu,old_V_y,vpad,num_x,num_y,delta_x,delta_y,epsilon,sigma,y_grid,c,lambda_cost);
+[V,r,lambda,diff,M]=solve_HJB_extra_eq(mu,old_V_y,vpad,num_x,num_y,delta_x,delta_y,epsilon,sigma,y_grid,c,lambda_cost);
 
 lambda2=eval_lambda(V,mu,vpad,num_x,num_y,delta_x,delta_y,sigma,y_grid) %TODO: eval_lambda is wrapping around!
 
@@ -101,7 +103,7 @@ alpha=-old_V_y/(c*(1-lambda_cost));
 
 'Solving Poisson'
 %Uses perturbed equation from Achdou_MFG_Numerical paper
-[mu,r2,diff2,M,b,diff3]=solve_Poisson_perturbed(ro,old_mu,V,num_x,num_y,delta_x,delta_y,epsilon,sigma,y_grid,alpha);
+[mu,r2,diff2,M2,b,diff3]=solve_Poisson_perturbed(ro,old_mu,V,num_x,num_y,delta_x,delta_y,epsilon,sigma,y_grid,alpha);
 
 k
 abs(lambda-old_lambda)
@@ -114,6 +116,8 @@ lambda2_history(k,1)=lambda2;
 % lambda_max_history(k,1)=lambda_max;
 % lambda_min_history(k,1)=lambda_min;
 
+r_history(k)=r;
+r2_history(k)=r2;
 diff_history(:,k)=diff;
 diff2_history(:,k)=diff2;
 diff3_history(:,k)=diff3;

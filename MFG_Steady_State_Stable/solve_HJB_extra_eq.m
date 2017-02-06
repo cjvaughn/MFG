@@ -1,7 +1,7 @@
-function[V,r,lambda,diff]=solve_HJB_extra_eq(mu,old_V_y,vpad,num_x,num_y,delta_x,delta_y,epsilon,sigma,y_grid,c,lambda_cost)
+function[V,r,lambda,diff,M]=solve_HJB_extra_eq(mu,old_V_y,vpad,num_x,num_y,delta_x,delta_y,epsilon,sigma,y_grid,c,lambda_cost)
 
-M=zeros(num_x*num_y+1,num_x*num_y+1);
-b=zeros(num_x*num_y+1,1);
+M=zeros(num_x*num_y+2,num_x*num_y+1);
+b=zeros(num_x*num_y+2,1);
 b(num_x*num_y+1,1)=0; %redundant, but emphasis on sum of the V_ij is 0
 
 u(:,:)=mu(:,:)*delta_x*delta_y; %u is (num_x,num_y), v is (2*num_1,2*num_y-1), output=(3*num_x-2,3*num_y-2)
@@ -76,6 +76,12 @@ for j=1:num_y
         M(num_x*num_y+1,ij)=M(num_x*num_y+1,ij)+1; %sum of the V_ij is 0
     end
 end
+%add symmetry constraint to buff up rank of M
+center=ij_lookup(ceil(num_x/2),ceil(num_y/2),num_x,num_y);
+first=ij_lookup(1,1,num_x,num_y);
+last=ij_lookup(num_x,num_y,num_x,num_y);
+M(num_x*num_y+2,first)=1;
+M(num_x*num_y+2,last)=-1;
 
 r=rank(M);
 V=M\b;

@@ -3,7 +3,7 @@
 
 normalize=true
 sigma=0.1
-s_2=sigma^2/2
+s_2=sigma^2/2 %stationary solution in Nourian paper
 
 s_2=20*sigma^2
 

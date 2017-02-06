@@ -2,7 +2,7 @@ num_time_points=15001;
 num_x=41; %1257; %495; %495; %573; %399; %1567; %787;
 num_y=41;
 
-delta_x=1;
+delta_x=0.5;
 delta_y=0.05;
 
 x_max=(num_x-1)/2*delta_x;
@@ -32,7 +32,7 @@ elseif mu_short_plot
     integral_value=sum(sum(f));
     f=f/integral_value; 
 elseif V_plot
-    f(:,:)=initial_V;
+    f(:,:)=V;
 else
     n=10000
     V_curr=squeeze(V(n,:,:));
