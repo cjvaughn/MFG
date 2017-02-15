@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='february_15_Ex1_2d'
+jobstring='test' %'february_15_Ex1_2d'
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
@@ -53,7 +53,7 @@ jobstring='february_15_Ex1_2d'
 cost_unsq_norm=false
 cost_unsq_norm_2=false
 cost_unsq_norm_3=false
-cost_Nourian=false
+cost_Nourian=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
@@ -89,7 +89,7 @@ sigma=0.1 %ToDo!!!!
 rho_0=0 %sigma^2; %ToDo, make 0
 beta=0
 
-num_time_points=1961
+num_time_points=11 %1961
 num_y=21 %needs to be odd
 
 delta_x=1.0
@@ -246,9 +246,13 @@ for counter=1:num_time_points-1
 
         F2_1=ifftn(fftn(u1pad).*fftn_v1pad);
         F_1=F2_1(num_x:2*num_x-1,num_y:2*num_y-1,num_x:2*num_x-1);
+        F_1=F_1.^2;
         F2_2=ifftn(fftn(u2pad).*fftn_v2pad);
         F_2=F2_2(num_x:2*num_x-1,num_x:2*num_x-1,num_y:2*num_y-1);
-        F=F_1.^2+F_2.^2;
+        F_2=F_2.^2;
+        F_1_extended=repmat(F_1,1,1,1,num_y);
+        F_2_extended=repmat(reshape(F_2,num_x,1,num_x,num_y),1,num_y,1,1);
+        F=F_1_extended+F_2_extended;
     else
         upad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
         upad(1:num_x,1:num_y,1:num_x,1:num_y)=u;

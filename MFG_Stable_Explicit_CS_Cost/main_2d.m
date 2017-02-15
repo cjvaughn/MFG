@@ -1,6 +1,7 @@
 clearvars
 tic
 jobstring='january_24_Ex1_2d'
+%Note! This version is not updated to using CS Cost!
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
