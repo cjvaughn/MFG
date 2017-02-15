@@ -1,9 +1,9 @@
 num_time_points=15001;
-num_x=27; %495; %495; %573; %399; %1567; %787;
+num_x=5; %495; %495; %573; %399; %1567; %787;
 num_y=41;
 
-delta_x=0.1;
-delta_y=0.025;
+delta_x=0.5;
+delta_y=0.05;
 
 x_max=(num_x-1)/2*delta_x;
 y_max=(num_y-1)/2*delta_y;

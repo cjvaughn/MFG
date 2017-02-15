@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='january_24_Ex1_2d'
+jobstring='february_15_Ex1_2d'
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
@@ -57,9 +57,10 @@ cost_Nourian=false
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
-bound_alpha=true
+bound_alpha=false
 c=2
-lambda=0.5
+lambda=1/3
+lambda2=0
 
 initial_mu_guess=false
 
@@ -75,24 +76,24 @@ initial_2_boxes=false %birds are in 1 of two boxes in quadrants 2 and 4
 initial_2_points=false %birds are either at (-1,0) or (1,0) (when box_r=100)
 initial_5_points=false %birds are either at (-1,0) (-0.5,0) (0,0) (.5,0) or (1,0) (when box_r=100)
 initial_5_points_xandv=false %birds are either at (-1,.1) (-1,-.1) (0,0) (1,.1) or (1,-.1) (when box_r=100)
-initial_skew=true %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
+initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 
-num_iterations=10 %ToDo
+num_iterations=2 %ToDo
 
 %more_room_factor=15
-alpha_max=0.1 %todo, 1
+alpha_max=1 %todo, 1
 alpha_min=-alpha_max
 
-sigma=0 %0.1 %ToDo!!!!
-rho_0=sigma^2; %ToDo, make 0
-beta=0.6
+sigma=0.1 %ToDo!!!!
+rho_0=0 %sigma^2; %ToDo, make 0
+beta=0
 
-num_time_points=501
+num_time_points=1961
 num_y=21 %needs to be odd
 
-delta_x=0.5
-delta_y=0.025
+delta_x=1.0
+delta_y=0.05
 
 box_r=round(0.25/delta_x)
 box_r_y=round(0.2/delta_y)
@@ -214,7 +215,8 @@ else
 end
 
 mu_diff_max=1;
-old_alpha=zeros(num_time_points,num_x,num_y);
+old_alpha_1=zeros(num_time_points,num_x,num_y,num_x,num_y);
+old_alpha_2=zeros(num_time_points,num_x,num_y,num_x,num_y);
 cost_alpha=zeros(num_time_points-1,1);
 cost_integral=zeros(num_time_points-1,1);
 %Iteration:
@@ -326,7 +328,7 @@ for counter=1:num_time_points-1
         alpha_2_diff_real(mu_curr>0)=alpha_2_diff(mu_curr>0);
         max_curr=max(max(max(max(alpha_2_diff_real))));
         max_diff_alpha_2=max(max_curr,max_diff_alpha_2);
-        cost_alpha(n)=sum(sum(sum(sum(1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)))));
+        cost_alpha(n)=sum(sum(sum(sum(1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha_1(n,:,:,:,:)).*alpha_1+squeeze(old_alpha_2(n,:,:,:,:)).*alpha_2)))));
         cost_integral(n)=sum(sum(sum(sum(c*lambda*F(:,:)))));
     end
 
@@ -546,10 +548,7 @@ value=max(max(max(max(max(mu_diff_frac(:,:,:,:,:))))));
 'Largest Fractional Difference'
 value
 K=K+1;
-end %This ends the while loop
 
-%Final Calculations
-timer=toc
 final_mu=squeeze(mu(num_time_points,:,:,:,:)).*(delta_x*delta_y)^2;
 
 mu_12=sum(sum(final_mu,3),4).*(delta_x*delta_y)^2;
@@ -593,4 +592,9 @@ save(strcat(jobstring,'_cost_integral.mat'),'cost_integral')
 % %save(strcat(jobstring,'_mu.mat'),'mu','-v7.3')
 % save(strcat(jobstring,'_mu_short.mat'),'mu_short','-v7.3')
 save(strcat(jobstring,'_integral_values_2.mat'),'integral_values_2')
+end %This ends the while loop
+
+%Final Calculations
+timer=toc
+
 'Done'

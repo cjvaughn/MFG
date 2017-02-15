@@ -3,10 +3,15 @@ clearvars
 % start the timer
 tic
 % where to save the data
-jobstring='february_5_Ex1'
+jobstring='test' %'february_13_Ex10'
 
 %{
 Notes:
+February 15th: moved saving of final files inside loop (so that we can run
+for more iterations and just take the most recent iteration
+
+February 13th: reverted February 6th change (wasn't converging)
+
 February 6th: replaced alpha with old_alpha in HJB if K>1 (makes it linear)
 
 February 1st: added boolean bing_sun_alpha (see blue book page 7)
@@ -91,7 +96,7 @@ bound_alpha=false
 % lambda2 is a weight to align the flock to a deterministic path
 % (usually doesn't converge if lambda2>0)
 c=3
-lambda=0.1
+lambda=1/3
 lambda2=0
 
 % used to set the starting mu
@@ -116,10 +121,10 @@ initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 initial_skew4=false
-initial_skew5=true
+initial_skew5=false
 
 % number of times to iterate between HJB and Kolmogorov
-num_iterations=40
+num_iterations=20 %ToDo
 
 % if bound_alpha, this defines the largest possible value for alpha
 % if not bound_alpha, this is the maximum alpha that can be reached to meet
@@ -133,12 +138,12 @@ sigma=0.1
 % relative to the minimum possible cost
 rho_0=0;
 % parameter in the flocking cost term
-beta=0.5
+beta=0
 
 % number of time steps
-num_time_points=3001
+num_time_points=101 %20801
 % number of grid points in y (which determines y_max with delta_y)
-num_y=121 %needs to be odd
+num_y=41 %needs to be odd
 
 % grid size for x and y
 delta_x=0.5
@@ -367,7 +372,8 @@ for counter=1:num_time_points-1
     %%%% Using convolution
     %Linear, using the previous estimate for V to approximate gradient V
     if K>1
-        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+squeeze(old_alpha(n,:,:)).*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
+        %V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+squeeze(old_alpha(n,:,:)).*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
+        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
     else
         V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/2*c*(1-lambda-lambda2)*(alpha.*alpha)+c*lambda*F(:,:)+c*lambda2*100*(y_j-theta_t).^2-rho_0);
     end
@@ -543,11 +549,8 @@ value=max(max(max(mu_diff_frac(:,:,:))));
 'Largest Fractional Difference'
 value
 K=K+1;
-end %This ends the while loop
 
 %% Final calculations and save data
-% stop the timer
-timer=toc
 final_mu=squeeze(mu(num_time_points,:,:)).*delta_x*delta_y;
 save(strcat(jobstring,'_final_mu.mat'),'final_mu')
 initial_V=squeeze(V(1,:,:));
@@ -565,4 +568,9 @@ end
 %save(strcat(jobstring,'_mu.mat'),'mu','-v7.3')
 save(strcat(jobstring,'_mu_short.mat'),'mu_short','-v7.3')
 save(strcat(jobstring,'_integral_values.mat'),'integral_values')
+end %This ends the while loop
+
+%% Final calculations and save data
+% stop the timer
+timer=toc
 'Done'

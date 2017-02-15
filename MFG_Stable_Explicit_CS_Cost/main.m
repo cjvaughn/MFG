@@ -1,6 +1,9 @@
 clearvars
 tic
-jobstring='february_2_Ex17'
+jobstring='february_8_Ex14'
+
+%February 8th: added boolean using_CM_denominator to not have square in
+%denominator
 
 %February 1st: making a completely new cost to mimick Cucker Smale/Mordecki
 
@@ -58,6 +61,9 @@ jobstring='february_2_Ex17'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
+'CS Cost'
+
+using_CM_denominator=false
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
@@ -81,7 +87,7 @@ initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 initial_skew4=false
-initial_skew5=true
+initial_skew5=false
 
 num_iterations=20 %TODO
 
@@ -90,9 +96,9 @@ alpha_min=-alpha_max
 
 sigma=0.1
 rho_0=0; %ToDo, make 0
-beta=0.9
+beta=0.4
 
-num_time_points=2201 %7501 %todo
+num_time_points=2601 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
@@ -208,8 +214,11 @@ if value~=1
     value
 end
 
-
-v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
+if using_CM_denominator
+    v=get_v_matrix_CM(num_x,num_y,delta_x,delta_y,beta);
+else
+    v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
+end
 vpad=zeros(3*num_x-2,3*num_y-2);
 vpad(1:2*num_x-1,1:2*num_y-1)=v;
 fftn_vpad=fftn(vpad);
