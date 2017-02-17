@@ -3,7 +3,7 @@ clearvars
 % start the timer
 tic
 % where to save the data
-jobstring='test' %'february_13_Ex10'
+jobstring='february_17_Ex1'
 
 %{
 Notes:
@@ -78,10 +78,22 @@ bing_sun_alpha=false
 % (whether the norms are squared or not in numerator and/or denominator
 % cost_Nourian is the cost in the Nourian paper if the weights are c=3,
 % lambda=1/3
+%this is our version of flocking with square on the inside
+cost_our_flocking=false
 cost_unsq_norm=false
 cost_unsq_norm_2=false
 cost_unsq_norm_3=false
-cost_Nourian=true
+cost_Nourian=false
+% parameter in the flocking cost term
+beta=0
+%this is attraction repulsion with exponential weights of absolute value
+%differences
+cost_attraction_repulsion_exp_abs=true
+% parameters in the attraction repulsion cost
+C_A=1
+C_R=1
+l_A=2
+l_R=1
 
 % for checking if sum is 1, and alpha<alpha_max, V>0
 threshold=10^(-5)
@@ -95,8 +107,8 @@ bound_alpha=false
 % lambda increases the weight on the flocking cost, F
 % lambda2 is a weight to align the flock to a deterministic path
 % (usually doesn't converge if lambda2>0)
-c=3
-lambda=1/3
+c=2
+lambda=0.5
 lambda2=0
 
 % used to set the starting mu
@@ -137,11 +149,9 @@ sigma=0.1
 % rho_0 does nothing. It is the parameter added to the HJB to define V
 % relative to the minimum possible cost
 rho_0=0;
-% parameter in the flocking cost term
-beta=0
 
 % number of time steps
-num_time_points=101 %20801
+num_time_points=2601
 % number of grid points in y (which determines y_max with delta_y)
 num_y=41 %needs to be odd
 
@@ -273,14 +283,22 @@ elseif cost_unsq_norm_3
     v=get_v_matrix_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
 elseif cost_Nourian
     v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
-else
+elseif cost_our_flocking
     v=get_v_matrix(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_attraction_repulsion_exp_abs
+    v=get_v_matrix_a_r_exp_abs(num_x,num_y,delta_x,delta_y,C_A,C_R,l_A,l_R);
 end
 % calculate fft (fast fourier transform) of the weights used to calculate
 % the flocking cost
-vpad=zeros(3*num_x-2,3*num_y-2);
-vpad(1:2*num_x-1,1:2*num_y-1)=v;
-fftn_vpad=fftn(vpad);
+if cost_attraction_repulsion_exp_abs
+    vpad=zeros(3*num_x-2,1);
+    vpad(1:2*num_x-1,1)=v;
+    fftn_vpad=fftn(vpad);
+else
+    vpad=zeros(3*num_x-2,3*num_y-2);
+    vpad(1:2*num_x-1,1:2*num_y-1)=v;
+    fftn_vpad=fftn(vpad);
+end
 
 % used to determine when we have converged
 mu_diff_max=1;
@@ -309,15 +327,24 @@ for counter=1:num_time_points-1
     t_n=t_grid(n);
     
     % calculate F, the flocking cost
-    u(:,:)=mu(n,:,:)*delta_x*delta_y; %u is (num_x,num_y), v is (2*num_x-1,2*num_y-1), output=(3*num_x-2,3*num_y-2)
+    if cost_attraction_repulsion_exp_abs
+        u(:,:)=mu(n,:,:)*delta_x*delta_y;
+        u_marg=sum(u,2);
+        upad=zeros(3*num_x-2,1);
+        upad(1:num_x,1)=u_marg;
+        F2=ifftn(fftn(upad).*fftn_vpad);
+        F_short=F2(num_x:2*num_x-1,1);
+        F=repmat(F_short,1,num_y);
+    else
+        u(:,:)=mu(n,:,:)*delta_x*delta_y; %u is (num_x,num_y), v is (2*num_x-1,2*num_y-1), output=(3*num_x-2,3*num_y-2)
     
-    upad=zeros(3*num_x-2,3*num_y-2);
-    upad(1:num_x,1:num_y)=u;
-
-    F2=ifftn(fftn(upad).*fftn_vpad);
-    F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
-    if cost_Nourian
-        F=F.^2;
+        upad=zeros(3*num_x-2,3*num_y-2);
+        upad(1:num_x,1:num_y)=u;
+        F2=ifftn(fftn(upad).*fftn_vpad);
+        F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
+        if cost_Nourian
+            F=F.^2;
+        end
     end
 
     mu_curr=squeeze(mu(n,:,:));

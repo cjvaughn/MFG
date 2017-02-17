@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='test' %'february_15_Ex1_2d'
+jobstring='february_15_Ex5_2d'
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
@@ -79,7 +79,7 @@ initial_5_points_xandv=false %birds are either at (-1,.1) (-1,-.1) (0,0) (1,.1) 
 initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 
-num_iterations=2 %ToDo
+num_iterations=20 %ToDo
 
 %more_room_factor=15
 alpha_max=1 %todo, 1
@@ -89,7 +89,7 @@ sigma=0.1 %ToDo!!!!
 rho_0=0 %sigma^2; %ToDo, make 0
 beta=0
 
-num_time_points=11 %1961
+num_time_points=981
 num_y=21 %needs to be odd
 
 delta_x=1.0
