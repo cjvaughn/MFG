@@ -1,6 +1,9 @@
 clearvars
 tic
-jobstring='february_8_Ex14'
+jobstring='test' %'february_22_Ex15'
+
+%February 22nd: added boolean normalize_weights to make the control an
+%actual weighted average
 
 %February 8th: added boolean using_CM_denominator to not have square in
 %denominator
@@ -63,6 +66,8 @@ jobstring='february_8_Ex14'
 
 'CS Cost'
 
+normalize_weights=true
+
 using_CM_denominator=false
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
@@ -87,24 +92,24 @@ initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 initial_skew4=false
-initial_skew5=false
+initial_skew5=true
 
-num_iterations=20 %TODO
+num_iterations=40 %TODO
 
 alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
-sigma=0.1
+sigma=1
 rho_0=0; %ToDo, make 0
-beta=0.4
+beta=0
 
-num_time_points=2601 %7501 %todo
+num_time_points=2001 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
-delta_y=0.05
+delta_y=0.1
 
-box_r=round(10.0/delta_x)
+box_r=round(1.0/delta_x)
 box_r_y=round(0.1/delta_y)
 
 y_min=-(num_y-1)/2*delta_y;
@@ -218,10 +223,15 @@ if using_CM_denominator
     v=get_v_matrix_CM(num_x,num_y,delta_x,delta_y,beta);
 else
     v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
+    v_weights=get_v_matrix_Nourian_weights(num_x,num_y,delta_x,delta_y,beta);
 end
 vpad=zeros(3*num_x-2,3*num_y-2);
 vpad(1:2*num_x-1,1:2*num_y-1)=v;
 fftn_vpad=fftn(vpad);
+
+vpad_weights=zeros(3*num_x-2,3*num_y-2);
+vpad_weights(1:2*num_x-1,1:2*num_y-1)=v_weights;
+fftn_vpad_weights=fftn(vpad_weights);
 
 mu_diff_max=1;
 old_alpha=zeros(num_time_points,num_x,num_y);
@@ -244,9 +254,18 @@ for counter=1:num_time_points-1
     
     upad=zeros(3*num_x-2,3*num_y-2);
     upad(1:num_x,1:num_y)=u;
+    
+    fftn_upad=fftn(upad);
 
-    F2=ifftn(fftn(upad).*fftn_vpad);
+    F2=ifftn(fftn_upad.*fftn_vpad);
     F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
+    
+    F2_weights=ifftn(fftn_upad.*fftn_vpad_weights);
+    F_weights=F2_weights(num_x:2*num_x-1,num_y:2*num_y-1);
+    
+    if normalize_weights
+    F=F./F_weights;
+    end
 
     mu_curr=squeeze(mu(n,:,:));
     V_curr=squeeze(V(n+1,:,:));
@@ -462,10 +481,8 @@ value=max(max(max(mu_diff_frac(:,:,:))));
 'Largest Fractional Difference'
 value
 K=K+1;
-end %This ends the while loop
 
-%Final Calculations
-timer=toc
+%Saving
 final_mu=squeeze(mu(num_time_points,:,:)).*delta_x*delta_y;
 save(strcat(jobstring,'_final_mu.mat'),'final_mu')
 initial_V=squeeze(V(1,:,:));
@@ -481,4 +498,8 @@ end
 %save(strcat(jobstring,'_mu.mat'),'mu','-v7.3')
 save(strcat(jobstring,'_mu_short.mat'),'mu_short','-v7.3')
 save(strcat(jobstring,'_integral_values_2.mat'),'integral_values_2')
+end %This ends the while loop
+
+%Final Calculations
+timer=toc
 'Done'

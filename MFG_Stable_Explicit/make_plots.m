@@ -1,6 +1,6 @@
 num_time_points=15001;
-num_x=15; %495; %495; %573; %399; %1567; %787;
-num_y=41;
+num_x=11; %127; %127; %495; %495; %573; %399; %1567; %787;
+num_y=21; %21; %41;
 
 delta_x=0.5;
 delta_y=0.05;
@@ -24,7 +24,7 @@ mu_short_plot=false; %use make_plots_movie instead
 V_plot=false;
 
 if mu_plot
-    f(:,:)=final_mu;
+    f(:,:)=mu_12; %final_mu;
     integral_value=sum(sum(f));
     f=f/integral_value;
 elseif mu_short_plot
@@ -71,7 +71,7 @@ colorbar;
 xlabel('x1')
 ylabel('v1')
 if mu_plot
-    title('mu(T,x,v), beta=0.8, c=2, lambda=0.5')
+    title('mu(T,x,v), params=[1,1.1,1.1,1], c=2, lambda=0.5')
 elseif mu_short_plot
     title('mu(t1,x,v), beta=1.5, c=2, lambda=0.5')
 elseif V_plot
@@ -80,15 +80,15 @@ else
     title('grad_v V(10000,x,v), beta=1.5')
 end
 
-% % Marginals in Velocity
-% v1_values=sum(f2,2)';
-% v2_values=sum(f2,1);
-% y=linspace(-y_max,y_max,num_y);
-% plot(y,v1_values)
-% % bar(y,v1_values)
-% title('mu(T,y1), beta=0')
-% xlabel('y1')
-% ylabel('mu(T,y1)')
+% Marginals in Velocity
+v1_values=sum(f2,2)';
+v2_values=sum(f2,1);
+y=linspace(-y_max,y_max,num_y);
+plot(y,v1_values)
+% bar(y,v1_values)
+title('mu(T,y1), beta=0')
+xlabel('y1')
+ylabel('mu(T,y1)')
 
 
 %% Attic

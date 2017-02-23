@@ -3,10 +3,15 @@ clearvars
 % start the timer
 tic
 % where to save the data
-jobstring='february_17_Ex1'
+jobstring='test' %'february_17_Ex1'
 
 %{
 Notes:
+February 17th: added attraction repulsion model and boolean to switch to
+it (only had to change get_v_matrix function to use attraction repulsion
+weights and adding constants for these weights, also calculating
+convolution in lower dimension by taking the marginal first)
+
 February 15th: moved saving of final files inside loop (so that we can run
 for more iterations and just take the most recent iteration
 
@@ -88,11 +93,17 @@ cost_Nourian=false
 beta=0
 %this is attraction repulsion with exponential weights of absolute value
 %differences
-cost_attraction_repulsion_exp_abs=true
+cost_a_r_exp_abs=true
+%this is attraction repulsion with exponential weights of square
+%differences
+cost_a_r_exp_sq=false
+%this is attraction repulsion with inverse weights of square
+%differences
+cost_a_r_inv_sq=false
 % parameters in the attraction repulsion cost
 C_A=1
-C_R=1
-l_A=2
+C_R=1.1
+l_A=1.1
 l_R=1
 
 % for checking if sum is 1, and alpha<alpha_max, V>0
@@ -151,7 +162,7 @@ sigma=0.1
 rho_0=0;
 
 % number of time steps
-num_time_points=2601
+num_time_points=1301
 % number of grid points in y (which determines y_max with delta_y)
 num_y=41 %needs to be odd
 
@@ -160,7 +171,7 @@ delta_x=0.5
 delta_y=0.05
 
 % used in definining initial configurations
-box_r=round(1.0/delta_x)
+box_r=round(5.0/delta_x)
 box_r_y=round(0.6/delta_y)
 
 y_min=-(num_y-1)/2*delta_y;
@@ -285,12 +296,16 @@ elseif cost_Nourian
     v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
 elseif cost_our_flocking
     v=get_v_matrix(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_attraction_repulsion_exp_abs
+elseif cost_a_r_exp_abs
     v=get_v_matrix_a_r_exp_abs(num_x,num_y,delta_x,delta_y,C_A,C_R,l_A,l_R);
+elseif cost_a_r_exp_sq
+    v=get_v_matrix_a_r_exp_sq(num_x,num_y,delta_x,delta_y,C_A,C_R,l_A,l_R);
+elseif cost_a_r_inv_sq
+    v=get_v_matrix_a_r_inv_sq(num_x,num_y,delta_x,delta_y,C_A,C_R,l_A,l_R);
 end
 % calculate fft (fast fourier transform) of the weights used to calculate
 % the flocking cost
-if cost_attraction_repulsion_exp_abs
+if cost_a_r_exp_abs || cost_a_r_exp_sq || cost_a_r_inv_sq
     vpad=zeros(3*num_x-2,1);
     vpad(1:2*num_x-1,1)=v;
     fftn_vpad=fftn(vpad);
@@ -327,7 +342,7 @@ for counter=1:num_time_points-1
     t_n=t_grid(n);
     
     % calculate F, the flocking cost
-    if cost_attraction_repulsion_exp_abs
+    if cost_a_r_exp_abs || cost_a_r_exp_sq || cost_a_r_inv_sq
         u(:,:)=mu(n,:,:)*delta_x*delta_y;
         u_marg=sum(u,2);
         upad=zeros(3*num_x-2,1);

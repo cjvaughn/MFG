@@ -20,12 +20,12 @@ lambda_cost=1/2
 initial_uniform=false
 initial_center=true
 
-num_iterations=10;
+num_iterations=40;
 
 epsilon=0 %for making it a viscosity solution (noise in x too)
 sigma=0.1
 beta=0
-ro=10
+ro=1
 
 num_x=41 %101;
 num_y=41

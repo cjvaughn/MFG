@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='february_15_Ex5_2d'
+jobstring='test' %'february_15_Ex5_2d'
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
@@ -50,10 +50,20 @@ jobstring='february_15_Ex5_2d'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
+cost_our_flocking=false
 cost_unsq_norm=false
 cost_unsq_norm_2=false
 cost_unsq_norm_3=false
-cost_Nourian=true
+cost_Nourian=false
+
+%this is attraction repulsion with exponential weights of absolute value
+%differences
+cost_a_r_exp_abs=true
+% parameters in the attraction repulsion cost
+C_A=1
+C_R=1.1
+l_A=1.1
+l_R=1
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
@@ -89,7 +99,7 @@ sigma=0.1 %ToDo!!!!
 rho_0=0 %sigma^2; %ToDo, make 0
 beta=0
 
-num_time_points=981
+num_time_points=501 %981
 num_y=21 %needs to be odd
 
 delta_x=1.0
@@ -198,8 +208,10 @@ elseif cost_unsq_norm_3
     v=get_v_matrix_2d_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
 elseif cost_Nourian
     [v1,v2]=get_v_matrix_2d_Nourian(num_x,num_y,delta_x,delta_y,beta);
-else
+elseif cost_our_flocking
     v=get_v_matrix_2d(num_x,num_y,delta_x,delta_y,beta);
+elseif cost_a_r_exp_abs
+    v=get_v_matrix_2d_a_r_exp_abs(num_x,num_y,delta_x,delta_y,C_A,C_R,l_A,l_R);
 end
 if cost_Nourian
     v1pad=zeros(3*num_x-2,3*num_y-2,3*num_x-2);
@@ -208,6 +220,10 @@ if cost_Nourian
     v2pad=zeros(3*num_x-2,3*num_x-2,3*num_y-2);
     v2pad(1:2*num_x-1,1:2*num_x-1,1:2*num_y-1)=v2;
     fftn_v2pad=fftn(v2pad);
+elseif cost_a_r_exp_abs
+    vpad=zeros(3*num_x-2,3*num_x-2);
+    vpad(1:2*num_x-1,1:2*num_x-1)=v;
+    fftn_vpad=fftn(vpad);
 else
     vpad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
     vpad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1,1:2*num_y-1)=v;
@@ -253,6 +269,13 @@ for counter=1:num_time_points-1
         F_1_extended=repmat(F_1,1,1,1,num_y);
         F_2_extended=repmat(reshape(F_2,num_x,1,num_x,num_y),1,num_y,1,1);
         F=F_1_extended+F_2_extended;
+    elseif cost_a_r_exp_abs
+        u_marg=squeeze(sum(sum(u,4),2));
+        upad=zeros(3*num_x-2,3*num_x-2);
+        upad(1:num_x,1:num_x)=u_marg;
+        F2=ifftn(fftn(upad).*fftn_vpad);
+        F_short=F2(num_x:2*num_x-1,num_x:2*num_x-1);
+        F=repmat(reshape(F_short,num_x,1,num_x,1),1,num_y,1,num_y);
     else
         upad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
         upad(1:num_x,1:num_y,1:num_x,1:num_y)=u;
