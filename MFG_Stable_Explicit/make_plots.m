@@ -1,6 +1,6 @@
 num_time_points=15001;
-num_x=11; %127; %127; %495; %495; %573; %399; %1567; %787;
-num_y=21; %21; %41;
+num_x=93; %127; %127; %495; %495; %573; %399; %1567; %787;
+num_y=41; %21; %41;
 
 delta_x=0.5;
 delta_y=0.05;
@@ -24,7 +24,7 @@ mu_short_plot=false; %use make_plots_movie instead
 V_plot=false;
 
 if mu_plot
-    f(:,:)=mu_12; %final_mu;
+    f(:,:)=final_mu;
     integral_value=sum(sum(f));
     f=f/integral_value;
 elseif mu_short_plot

@@ -3,7 +3,7 @@ clearvars
 % start the timer
 tic
 % where to save the data
-jobstring='test' %'february_17_Ex1'
+jobstring='february_23_Ex1'
 
 %{
 Notes:
@@ -76,6 +76,9 @@ origin!)
 
 %% Initializing Parameters:
 
+% normalize weights such that it's actually a weighted average
+normalize_weights=true % only works with cost_Nourian
+
 % doesn't work, if  left and right derivatives are different signs, need alpha=0
 bing_sun_alpha=false
 
@@ -88,12 +91,12 @@ cost_our_flocking=false
 cost_unsq_norm=false
 cost_unsq_norm_2=false
 cost_unsq_norm_3=false
-cost_Nourian=false
+cost_Nourian=true
 % parameter in the flocking cost term
-beta=0
+beta=1.01
 %this is attraction repulsion with exponential weights of absolute value
 %differences
-cost_a_r_exp_abs=true
+cost_a_r_exp_abs=false
 %this is attraction repulsion with exponential weights of square
 %differences
 cost_a_r_exp_sq=false
@@ -108,7 +111,8 @@ l_R=1
 
 % for checking if sum is 1, and alpha<alpha_max, V>0
 threshold=10^(-5)
-% 'normalize' no longer needed since our scheme is stable
+% 'normalize' no longer needed since our scheme is stable %this is
+% different from normalize_weights
 % (originally used to renormalize mu to be a density)
 normalize=false
 % to restrict |alpha|<alpha_max
@@ -147,28 +151,28 @@ initial_skew4=false
 initial_skew5=false
 
 % number of times to iterate between HJB and Kolmogorov
-num_iterations=20 %ToDo
+num_iterations=40 %ToDo
 
 % if bound_alpha, this defines the largest possible value for alpha
 % if not bound_alpha, this is the maximum alpha that can be reached to meet
 % the stability condition
-alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=4.5         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 % dynamics: dx=v*dt, dy=alpha*dt+sigma*dW (x=position, y=velocity)
-sigma=0.1
+sigma=1
 % rho_0 does nothing. It is the parameter added to the HJB to define V
 % relative to the minimum possible cost
 rho_0=0;
 
 % number of time steps
-num_time_points=1301
+num_time_points=2285 %2285 %4569 %9137
 % number of grid points in y (which determines y_max with delta_y)
 num_y=41 %needs to be odd
 
 % grid size for x and y
 delta_x=0.5
-delta_y=0.05
+delta_y=0.15
 
 % used in definining initial configurations
 box_r=round(5.0/delta_x)
@@ -294,6 +298,9 @@ elseif cost_unsq_norm_3
     v=get_v_matrix_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
 elseif cost_Nourian
     v=get_v_matrix_Nourian(num_x,num_y,delta_x,delta_y,beta);
+    if normalize_weights
+        v_weights=get_v_matrix_Nourian_weights(num_x,num_y,delta_x,delta_y,beta);
+    end
 elseif cost_our_flocking
     v=get_v_matrix(num_x,num_y,delta_x,delta_y,beta);
 elseif cost_a_r_exp_abs
@@ -313,6 +320,12 @@ else
     vpad=zeros(3*num_x-2,3*num_y-2);
     vpad(1:2*num_x-1,1:2*num_y-1)=v;
     fftn_vpad=fftn(vpad);
+end
+
+if normalize_weights
+    vpad_weights=zeros(3*num_x-2,3*num_y-2);
+    vpad_weights(1:2*num_x-1,1:2*num_y-1)=v_weights;
+    fftn_vpad_weights=fftn(vpad_weights);
 end
 
 % used to determine when we have converged
@@ -355,9 +368,15 @@ for counter=1:num_time_points-1
     
         upad=zeros(3*num_x-2,3*num_y-2);
         upad(1:num_x,1:num_y)=u;
-        F2=ifftn(fftn(upad).*fftn_vpad);
+        fftn_upad=fftn(upad);
+        F2=ifftn(fftn_upad.*fftn_vpad);
         F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
         if cost_Nourian
+            if normalize_weights
+                F2_weights=ifftn(fftn_upad.*fftn_vpad_weights);
+                F_weights=F2_weights(num_x:2*num_x-1,num_y:2*num_y-1);
+                F=F./F_weights;
+            end
             F=F.^2;
         end
     end

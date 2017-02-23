@@ -68,7 +68,7 @@ jobstring='test' %'february_22_Ex15'
 
 normalize_weights=true
 
-using_CM_denominator=false
+using_CM_denominator=false %not working with normalize_weights yet
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
@@ -92,18 +92,18 @@ initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 initial_skew4=false
-initial_skew5=true
+initial_skew5=false
 
 num_iterations=40 %TODO
 
-alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=3         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=1
 rho_0=0; %ToDo, make 0
-beta=0
+beta=0.99
 
-num_time_points=2001 %7501 %todo
+num_time_points=2501 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
