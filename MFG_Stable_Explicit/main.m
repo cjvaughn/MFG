@@ -3,7 +3,7 @@ clearvars
 % start the timer
 tic
 % where to save the data
-jobstring='february_23_Ex1'
+jobstring='february_24_Ex1'
 
 %{
 Notes:

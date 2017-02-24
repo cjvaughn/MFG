@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='test' %'february_22_Ex15'
+jobstring='test' %'february_23_Ex15'
 
 %February 22nd: added boolean normalize_weights to make the control an
 %actual weighted average
@@ -96,21 +96,21 @@ initial_skew5=false
 
 num_iterations=40 %TODO
 
-alpha_max=3         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 sigma=1
 rho_0=0; %ToDo, make 0
-beta=0.99
+beta=0.9
 
-num_time_points=2501 %7501 %todo
+num_time_points=1001 %12001 %7501 %todo
 num_y=41 %needs to be odd
 
 delta_x=0.5
 delta_y=0.1
 
 box_r=round(1.0/delta_x)
-box_r_y=round(0.1/delta_y)
+box_r_y=round(0.5/delta_y)
 
 y_min=-(num_y-1)/2*delta_y;
 y_max=(num_y-1)/2*delta_y;
@@ -229,8 +229,8 @@ vpad=zeros(3*num_x-2,3*num_y-2);
 vpad(1:2*num_x-1,1:2*num_y-1)=v;
 fftn_vpad=fftn(vpad);
 
-vpad_weights=zeros(3*num_x-2,3*num_y-2);
-vpad_weights(1:2*num_x-1,1:2*num_y-1)=v_weights;
+vpad_weights=zeros(3*num_x-2,1);
+vpad_weights(1:2*num_x-1,1)=v_weights;
 fftn_vpad_weights=fftn(vpad_weights);
 
 mu_diff_max=1;
@@ -243,9 +243,6 @@ old_mu=mu;
 %% Given mu, solve for V
 
 max_alpha=0;
-V=zeros(num_time_points,num_x,num_y);
-V(num_time_points,:,:)=0;
-
 max_diff_alpha=0;
 for counter=1:num_time_points-1
     n=num_time_points-counter;
@@ -254,64 +251,25 @@ for counter=1:num_time_points-1
     
     upad=zeros(3*num_x-2,3*num_y-2);
     upad(1:num_x,1:num_y)=u;
-    
-    fftn_upad=fftn(upad);
 
-    F2=ifftn(fftn_upad.*fftn_vpad);
+    F2=ifftn(fftn(upad).*fftn_vpad);
     F=F2(num_x:2*num_x-1,num_y:2*num_y-1);
     
-    F2_weights=ifftn(fftn_upad.*fftn_vpad_weights);
-    F_weights=F2_weights(num_x:2*num_x-1,num_y:2*num_y-1);
-    
     if normalize_weights
-    F=F./F_weights;
+        u_marg=squeeze(sum(u,2));
+        upad_weights=zeros(3*num_x-2,1);
+        upad_weights(1:num_x,1)=u_marg;
+        F2_weights=ifftn(fftn(upad_weights).*fftn_vpad_weights);
+        F_weights=F2_weights(num_x:2*num_x-1,1);
+        F_weights_extended=repmat(F_weights,1,num_y);
+        F=F./F_weights_extended;
     end
-
-    mu_curr=squeeze(mu(n,:,:));
-    V_curr=squeeze(V(n+1,:,:));
     
-    V_yy(:,:)=shift(V_curr,1,2)-2*V_curr+shift(V_curr,-1,2); %centered
-    %New Scheme BC:
-    V_yy(:,1)=2*V_curr(:,2)-2*V_curr(:,1);
-    V_yy(:,num_y)=2*V_curr(:,num_y-1)-2*V_curr(:,num_y);
-    V_x=zeros(num_x,num_y);
-    V_x(:,1:ceil(num_y/2)-1)=V_curr(:,1:ceil(num_y/2)-1)-shift(V_curr(:,1:ceil(num_y/2)-1),-1,1); %if v_j<0, one sided backwards
-    V_x(:,ceil(num_y/2)+1:num_y)=shift(V_curr(:,ceil(num_y/2)+1:num_y),1,1)-V_curr(:,ceil(num_y/2)+1:num_y); %if v_j>0, one sided forward
-    %New Scheme BC:
-    V_x(1,:)=0;
-    V_x(num_x,:)=0;
-    
-    %alpha_approx(:,:)=-(shift(V_curr,1,2)-shift(V_curr,-1,2)); %centered, Could have done other things here. Such as using last iterate for V, or Beta=0 solution.
-    right(:,:)=shift(V_curr,1,2)-V_curr;
-    left(:,:)=V_curr-shift(V_curr,-1,2);
-    V_y=zeros(num_x,num_y);
-
-    alpha_approx_left=-left/(2*delta_y)-F;
-    alpha_approx_right=-right/(2*delta_y)-F;
-    V_y(alpha_approx_left<0 & alpha_approx_right<0)=left(alpha_approx_left<0 & alpha_approx_right<0);
-    V_y(alpha_approx_left>0 & alpha_approx_right>0)=right(alpha_approx_left>0 & alpha_approx_right>0);
-    %New Scheme BC:
-    V_y(:,1)=0;
-    V_y(:,num_y)=0;
-    
-    alpha=-V_y/(2*delta_y)-F;
+    alpha=-F;
     if bound_alpha
         alpha=min(alpha,alpha_max);
         alpha=max(alpha,alpha_min);
     end
-    
-%     cost=(x_i-theta_t).^2;
-%     'here'
-%     cost(ceil(num_x/2),ceil(num_y/2))
-%     F(ceil(num_x/2),ceil(num_y/2))
-    
-    %%%% Using convolution
-    %Linear, using the previous estimate for V to approximate gradient V
-    %if K>1
-    %    V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/4*(squeeze(old_V_y(n,:,:)).*V_y)/(delta_y^2));
-    %else
-        V(n,:,:)=V_curr+delta_t*(sigma^2/2*V_yy/(delta_y)^2+y_j.*V_x/delta_x+alpha.*V_y/delta_y+1/4*(V_y.*V_y)/(delta_y^2));
-    %end
     
     if K>1
         alpha_diff=abs(squeeze(old_alpha(n,:,:))-alpha);
@@ -336,14 +294,6 @@ if max_alpha>alpha_max+threshold
     'Oh no!!!!! Part B max_alpha>alpha_max'
     max_alpha
 end
-'Minimum of V'
-value=min(min(min(V(:,:,:))))
-if value<-threshold
-    'Oh no!!!!! Negatives in V'
-    value
-end
-'Maximum of V'
-value=max(max(max(V(:,:,:))))
 
 
 'Part C: Kolmogorov'
@@ -407,7 +357,6 @@ for n=1:num_time_points-1
     mu_yy(:,num_y-1)=mu_yy(:,num_y-1)+mu_curr(:,num_y);
     mu_yy(:,1)=mu_yy(:,1)-mu_curr(:,num_y);
     mu_yy(:,num_y)=mu_yy(:,num_y)-mu_curr(:,1);
-    V_yy(:,:)=shift(V_curr,1,2)-2*V_curr+shift(V_curr,-1,2); %centered
     mu_x=zeros(num_x,num_y);
     mu_x(:,1:ceil(num_y/2)-1)=shift(mu_curr(:,1:ceil(num_y/2)-1),1,1)-mu_curr(:,1:ceil(num_y/2)-1); %if v_j<0, one sided forward
     mu_x(:,ceil(num_y/2)+1:num_y)=mu_curr(:,ceil(num_y/2)+1:num_y)-shift(mu_curr(:,ceil(num_y/2)+1:num_y),-1,1); %if v_j>0, one sided backwards (if v_j=0, 0)
@@ -485,9 +434,6 @@ K=K+1;
 %Saving
 final_mu=squeeze(mu(num_time_points,:,:)).*delta_x*delta_y;
 save(strcat(jobstring,'_final_mu.mat'),'final_mu')
-initial_V=squeeze(V(1,:,:));
-save(strcat(jobstring,'_initial_V.mat'),'initial_V')
-%save(strcat(jobstring,'_V.mat'),'V','-v7.3')
 
 output_freq=1000;
 num_times=floor(num_time_points/output_freq)+1;

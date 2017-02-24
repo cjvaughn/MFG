@@ -1,7 +1,8 @@
 clearvars
 tic
-jobstring='january_24_Ex1_2d'
-%Note! This version is not updated to using CS Cost!
+jobstring='test' %'january_24_Ex1_2d'
+
+%February 24th: Updating this version to using CS/CM Cost
 
 %January 27th: added rho_0 to HJB (can set to 0 to not have it)
 
@@ -51,16 +52,13 @@ jobstring='january_24_Ex1_2d'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
-cost_unsq_norm=false
-cost_unsq_norm_2=false
-cost_unsq_norm_3=false
-cost_Nourian=false
+'CS Cost'
+
+normalize_weights=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
 bound_alpha=true
-c=2
-lambda=0.5
 
 initial_mu_guess=false
 
@@ -81,7 +79,6 @@ initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=10
 
 num_iterations=10 %ToDo
 
-%more_room_factor=15
 alpha_max=0.1 %todo, 1
 alpha_min=-alpha_max
 
@@ -89,11 +86,11 @@ sigma=0 %0.1 %ToDo!!!!
 rho_0=sigma^2; %ToDo, make 0
 beta=0.6
 
-num_time_points=501
-num_y=21 %needs to be odd
+num_time_points=11
+num_y=11 %needs to be odd
 
 delta_x=0.5
-delta_y=0.025
+delta_y=0.05
 
 box_r=round(0.25/delta_x)
 box_r_y=round(0.2/delta_y)
@@ -190,34 +187,26 @@ if value~=1
     value
 end
     
-if cost_unsq_norm
-    v=get_v_matrix_2d_unsq_norm(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_unsq_norm_2
-    v=get_v_matrix_2d_unsq_norm_2(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_unsq_norm_3
-    v=get_v_matrix_2d_unsq_norm_3(num_x,num_y,delta_x,delta_y,beta);
-elseif cost_Nourian
-    [v1,v2]=get_v_matrix_2d_Nourian(num_x,num_y,delta_x,delta_y,beta);
-else
-    v=get_v_matrix_2d(num_x,num_y,delta_x,delta_y,beta);
-end
-if cost_Nourian
-    v1pad=zeros(3*num_x-2,3*num_y-2,3*num_x-2);
-    v1pad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1)=v1;
-    fftn_v1pad=fftn(v1pad);
-    v2pad=zeros(3*num_x-2,3*num_x-2,3*num_y-2);
-    v2pad(1:2*num_x-1,1:2*num_x-1,1:2*num_y-1)=v2;
-    fftn_v2pad=fftn(v2pad);
-else
-    vpad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
-    vpad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1,1:2*num_y-1)=v;
-    fftn_vpad=fftn(vpad);
-end
+[v1,v2]=get_v_matrix_2d_Nourian(num_x,num_y,delta_x,delta_y,beta);
+v_weights=get_v_matrix_2d_Nourian_weights(num_x,num_y,delta_x,delta_y,beta);
+    
+    
+v1pad=zeros(3*num_x-2,3*num_y-2,3*num_x-2);
+v1pad(1:2*num_x-1,1:2*num_y-1,1:2*num_x-1)=v1;
+fftn_v1pad=fftn(v1pad);
+v2pad=zeros(3*num_x-2,3*num_x-2,3*num_y-2);
+v2pad(1:2*num_x-1,1:2*num_x-1,1:2*num_y-1)=v2;
+fftn_v2pad=fftn(v2pad);
+
+vpad_weights=zeros(3*num_x-2,3*num_x-2);
+vpad_weights(1:2*num_x-1,1:2*num_x-1)=v_weights;
+fftn_vpad_weights=fftn(vpad_weights);
+
 
 mu_diff_max=1;
-old_alpha=zeros(num_time_points,num_x,num_y);
-cost_alpha=zeros(num_time_points-1,1);
-cost_integral=zeros(num_time_points-1,1);
+old_alpha_1=zeros(num_time_points,num_x,num_y,num_x,num_y);
+old_alpha_2=zeros(num_time_points,num_x,num_y,num_x,num_y);
+old_F=zeros(num_time_points,num_x,num_y);
 %Iteration:
 while(mu_diff_max>0 && K<num_iterations+1) %K<2 means 1 iteration
 old_mu=mu;
@@ -225,9 +214,6 @@ old_mu=mu;
 %% Given mu, solve for V
 
 max_alpha=0;
-V=zeros(num_time_points,num_x,num_y,num_x,num_y);
-V(num_time_points,:,:,:,:)=0;
-
 max_diff_alpha_1=0;
 max_diff_alpha_2=0;
 for counter=1:num_time_points-1
@@ -235,7 +221,7 @@ for counter=1:num_time_points-1
     t_n=t_grid(n);
     u(:,:,:,:)=mu(n,:,:,:,:)*(delta_x*delta_y)^2; %u is (num_x,num_y), v is (2*num_x-1,2*num_y-1), output=(3*num_x-2,3*num_y-2)
     
-    if cost_Nourian
+    
         u1=squeeze(sum(u,4));
         u2=squeeze(sum(u,2));
         u1pad=zeros(3*num_x-2,3*num_y-2,3*num_x-2);
@@ -247,73 +233,25 @@ for counter=1:num_time_points-1
         F_1=F2_1(num_x:2*num_x-1,num_y:2*num_y-1,num_x:2*num_x-1);
         F2_2=ifftn(fftn(u2pad).*fftn_v2pad);
         F_2=F2_2(num_x:2*num_x-1,num_x:2*num_x-1,num_y:2*num_y-1);
-        F=F_1.^2+F_2.^2;
-    else
-        upad=zeros(3*num_x-2,3*num_y-2,3*num_x-2,3*num_y-2);
-        upad(1:num_x,1:num_y,1:num_x,1:num_y)=u;
-
-        F2=ifftn(fftn(upad).*fftn_vpad);
-        F=F2(num_x:2*num_x-1,num_y:2*num_y-1,num_x:2*num_x-1,num_y:2*num_y-1);
-    end
-
-    mu_curr=squeeze(mu(n,:,:,:,:));
-    V_curr=squeeze(V(n+1,:,:,:,:));
+        F_v1=repmat(F_1,1,1,1,num_y);
+        F_v2=repmat(reshape(F_2,num_x,1,num_x,num_y),1,num_y,1,1);
+        
+        if normalize_weights
+            u_marg=squeeze(sum(sum(u,4),2));
+            upad=zeros(3*num_x-2,3*num_x-2);
+            upad(1:num_x,1:num_x)=u_marg;
+            F2_weights=ifftn(fftn(upad).*fftn_vpad_weights);
+            F_weights=F2_weights(num_x:2*num_x-1,num_y:2*num_y-1);
+            F_v1=F_v1./F_weights;
+            F_v2=F_v2./F_weights;
+        end
     
-    V_yy1(:,:,:,:)=shift(V_curr,1,2)-2*V_curr+shift(V_curr,-1,2); %centered
-    %New Scheme BC:
-    V_yy1(:,1,:,:)=2*V_curr(:,2,:,:)-2*V_curr(:,1,:,:);
-    V_yy1(:,num_y,:,:)=2*V_curr(:,num_y-1,:,:)-2*V_curr(:,num_y,:,:);
-    V_x1=zeros(num_x,num_y,num_x,num_y);
-    V_x1(:,1:ceil(num_y/2)-1,:,:)=V_curr(:,1:ceil(num_y/2)-1,:,:)-shift(V_curr(:,1:ceil(num_y/2)-1,:,:),-1,1); %if v_j<0, one sided backwards
-    V_x1(:,ceil(num_y/2)+1:num_y,:,:)=shift(V_curr(:,ceil(num_y/2)+1:num_y,:,:),1,1)-V_curr(:,ceil(num_y/2)+1:num_y,:,:); %if v_j>0, one sided forward
-    %New Scheme BC:
-    V_x1(1,:,:,:)=0;
-    V_x1(num_x,:,:,:)=0;
-    
-    right1=shift(V_curr,1,2)-V_curr;
-    left1(:,:,:,:)=V_curr-shift(V_curr,-1,2);
-    V_y1=zeros(num_x,num_y,num_x,num_y);
-    V_y1(left1<0 & right1<0)=right1(left1<0 & right1<0);
-    V_y1(left1>0 & right1>0)=left1(left1>0 & right1>0);
-    %New Scheme BC:
-    V_y1(:,1,:,:)=0;
-    V_y1(:,num_y,:,:)=0;
-    
-    V_yy2(:,:,:,:)=shift(V_curr,1,4)-2*V_curr+shift(V_curr,-1,4); %centered
-    %New Scheme BC:
-    V_yy2(:,:,:,1)=2*V_curr(:,:,:,2)-2*V_curr(:,:,:,1);
-    V_yy2(:,:,:,num_y)=2*V_curr(:,:,:,num_y-1)-2*V_curr(:,:,:,num_y);
-    V_x2=zeros(num_x,num_y,num_x,num_y);
-    V_x2(:,:,:,1:ceil(num_y/2)-1)=V_curr(:,:,:,1:ceil(num_y/2)-1)-shift(V_curr(:,:,:,1:ceil(num_y/2)-1),-1,3); %if v_j<0, one sided backwards
-    V_x2(:,:,:,ceil(num_y/2)+1:num_y)=shift(V_curr(:,:,:,ceil(num_y/2)+1:num_y),1,3)-V_curr(:,:,:,ceil(num_y/2)+1:num_y); %if v_j>0, one sided forward
-    %New Scheme BC:
-    V_x2(:,:,1,:)=0;
-    V_x2(:,:,num_x,:)=0;
-    
-    right2(:,:,:,:)=shift(V_curr,1,4)-V_curr;
-    left2(:,:,:,:)=V_curr-shift(V_curr,-1,4);
-    V_y2=zeros(num_x,num_y,num_x,num_y);
-    V_y2(left2<0 & right2<0)=right2(left2<0 & right2<0);
-    V_y2(left2>0 & right2>0)=left2(left2>0 & right2>0);
-    %New Scheme BC:
-    V_y2(:,:,:,1)=0;
-    V_y2(:,:,:,num_y)=0;
-    
-    alpha_1=-V_y1/(c*(1-lambda)*delta_y);
-    alpha_2=-V_y2/(c*(1-lambda)*delta_y);
+    alpha_1=-F_v1;
+    alpha_2=-F_v2;
     alpha_norm=sqrt(alpha_1.*alpha_1+alpha_2.*alpha_2);
     if bound_alpha
         alpha_1(alpha_norm>alpha_max)=alpha_1(alpha_norm>alpha_max)./alpha_norm(alpha_norm>alpha_max)*alpha_max;
         alpha_2(alpha_norm>alpha_max)=alpha_2(alpha_norm>alpha_max)./alpha_norm(alpha_norm>alpha_max)*alpha_max;
-    end
-    
-    
-    %%%% Using convolution 
-    %Linear, using the previous estimate for V to approximate gradient V
-    if K>1
-        V(n,:,:,:,:)=V_curr+delta_t*(sigma^2/2*(V_yy1+V_yy2)/(delta_y)^2+(y_j1.*V_x1+y_j2.*V_x2)/delta_x+alpha_1.*V_y1/delta_y+alpha_2.*V_y2/delta_y+1/2*c*(1-lambda)*(squeeze(old_alpha_1(n,:,:,:,:)).*alpha_1+squeeze(old_alpha_2(n,:,:,:,:)).*alpha_2)+c*lambda*F(:,:,:,:)-rho_0);
-    else
-        V(n,:,:,:,:)=V_curr+delta_t*(sigma^2/2*(V_yy1+V_yy2)/(delta_y)^2+(y_j1.*V_x1+y_j2.*V_x2)/delta_x+alpha_1.*V_y1/delta_y+alpha_2.*V_y2/delta_y+1/2*c*(1-lambda)*(alpha_1.*alpha_1+alpha_2.*alpha_2)+c*lambda*F(:,:,:,:)-rho_0);
     end
     
     if K>1
@@ -327,8 +265,6 @@ for counter=1:num_time_points-1
         alpha_2_diff_real(mu_curr>0)=alpha_2_diff(mu_curr>0);
         max_curr=max(max(max(max(alpha_2_diff_real))));
         max_diff_alpha_2=max(max_curr,max_diff_alpha_2);
-        cost_alpha(n)=sum(sum(sum(sum(1/2*c*(1-lambda-lambda2)*(squeeze(old_alpha(n,:,:)).*alpha)))));
-        cost_integral(n)=sum(sum(sum(sum(c*lambda*F(:,:)))));
     end
 
     alpha_norm=sqrt(alpha_1.*alpha_1+alpha_2.*alpha_2);
@@ -350,14 +286,6 @@ if max_alpha>alpha_max+threshold
     'Oh no!!!!! Part B max_alpha>alpha_max'
     max_alpha
 end
-'Minimum of V'
-value=min(min(min(min(min(V(:,:,:,:,:))))))
-if value<-threshold
-    'Oh no!!!!! Negatives in V'
-    value
-end
-'Maximum of V'
-value=max(max(max(max(max(V(:,:,:,:,:))))))
 
 
 'Part C: Kolmogorov'
@@ -407,7 +335,6 @@ for n=1:num_time_points-1
     t_n=t_grid(n);
         
     mu_curr=squeeze(mu(n,:,:,:,:));
-    V_curr=squeeze(V(n,:,:,:,:));
     
     mu_yy1(:,:,:,:)=shift(mu_curr,1,2)-2*mu_curr+shift(mu_curr,-1,2); %centered
     %New Scheme BC:
@@ -415,7 +342,6 @@ for n=1:num_time_points-1
     mu_yy1(:,num_y-1,:,:)=mu_yy1(:,num_y-1,:,:)+mu_curr(:,num_y,:,:);
     mu_yy1(:,1,:,:)=mu_yy1(:,1,:,:)-mu_curr(:,num_y,:,:);
     mu_yy1(:,num_y,:,:)=mu_yy1(:,num_y,:,:)-mu_curr(:,1,:,:);
-    V_yy1(:,:,:,:)=shift(V_curr,1,2)-2*V_curr+shift(V_curr,-1,2); %centered
     mu_x1=zeros(num_x,num_y,num_x,num_y);
     mu_x1(:,1:ceil(num_y/2)-1,:,:)=shift(mu_curr(:,1:ceil(num_y/2)-1,:,:),1,1)-mu_curr(:,1:ceil(num_y/2)-1,:,:); %if v_j<0, one sided forward
     mu_x1(:,ceil(num_y/2)+1:num_y,:,:)=mu_curr(:,ceil(num_y/2)+1:num_y,:,:)-shift(mu_curr(:,ceil(num_y/2)+1:num_y,:,:),-1,1); %if v_j>0, one sided backwards (if v_j=0, 0)
@@ -427,22 +353,12 @@ for n=1:num_time_points-1
     mu_x1(num_x,:,:,:)=0;
     mu_x1(num_x,ceil(num_y/2)+1:num_y,:,:)=-mu_curr(num_x-1,ceil(num_y/2)+1:num_y,:,:);
     
-    left1(:,:,:,:)=V_curr-shift(V_curr,-1,2);
-    right1(:,:,:,:)=shift(V_curr,1,2)-V_curr;
-
-    V_y1=zeros(num_x,num_y,num_x,num_y);
-    V_y1(left1<0 & right1<0)=right1(left1<0 & right1<0);
-    V_y1(left1>0 & right1>0)=left1(left1>0 & right1>0);
-    V_y1(:,1,:,:)=0;
-    V_y1(:,num_y,:,:)=0;
-    
     mu_yy2(:,:,:,:)=shift(mu_curr,1,4)-2*mu_curr+shift(mu_curr,-1,4); %centered
     %New Scheme BC:
     mu_yy2(:,:,:,2)=mu_yy2(:,:,:,2)+mu_curr(:,:,:,1);
     mu_yy2(:,:,:,num_y-1)=mu_yy2(:,:,:,num_y-1)+mu_curr(:,:,:,num_y);
     mu_yy2(:,:,:,1)=mu_yy2(:,:,:,1)-mu_curr(:,:,:,num_y);
     mu_yy2(:,:,:,num_y)=mu_yy2(:,:,:,num_y)-mu_curr(:,:,:,1);
-    V_yy2(:,:,:,:)=shift(V_curr,1,4)-2*V_curr+shift(V_curr,-1,4); %centered
     mu_x2=zeros(num_x,num_y,num_x,num_y);
     mu_x2(:,:,:,1:ceil(num_y/2)-1)=shift(mu_curr(:,:,:,1:ceil(num_y/2)-1),1,3)-mu_curr(:,:,:,1:ceil(num_y/2)-1); %if v_j<0, one sided forward
     mu_x2(:,:,:,ceil(num_y/2)+1:num_y)=mu_curr(:,:,:,ceil(num_y/2)+1:num_y)-shift(mu_curr(:,:,:,ceil(num_y/2)+1:num_y),-1,3); %if v_j>0, one sided backwards (if v_j=0, 0)
@@ -454,17 +370,8 @@ for n=1:num_time_points-1
     mu_x2(:,:,num_x,:)=0;
     mu_x2(:,:,num_x,ceil(num_y/2)+1:num_y)=-mu_curr(:,:,num_x-1,ceil(num_y/2)+1:num_y);
     
-    left2(:,:,:,:)=V_curr-shift(V_curr,-1,4);
-    right2(:,:,:,:)=shift(V_curr,1,4)-V_curr;
-
-    V_y2=zeros(num_x,num_y,num_x,num_y);
-    V_y2(left2<0 & right2<0)=right2(left2<0 & right2<0);
-    V_y2(left2>0 & right2>0)=left2(left2>0 & right2>0);
-    V_y2(:,:,:,1)=0;
-    V_y2(:,:,:,num_y)=0;
-    
-    alpha_1=-V_y1/(c*(1-lambda)*delta_y);
-    alpha_2=-V_y2/(c*(1-lambda)*delta_y);
+    alpha_1=squeeze(old_alpha_1(n,:,:,:,:));
+    alpha_2=squeeze(old_alpha_2(n,:,:,:,:));
     alpha_norm=sqrt(alpha_1.*alpha_1+alpha_2.*alpha_2);
     if bound_alpha
         alpha_1(alpha_norm>alpha_max)=alpha_1(alpha_norm>alpha_max)./alpha_norm(alpha_norm>alpha_max)*alpha_max;
@@ -547,10 +454,8 @@ value=max(max(max(max(max(mu_diff_frac(:,:,:,:,:))))));
 'Largest Fractional Difference'
 value
 K=K+1;
-end %This ends the while loop
 
-%Final Calculations
-timer=toc
+%Saving
 final_mu=squeeze(mu(num_time_points,:,:,:,:)).*(delta_x*delta_y)^2;
 
 mu_12=sum(sum(final_mu,3),4).*(delta_x*delta_y)^2;
@@ -577,21 +482,9 @@ save(strcat(jobstring,'_mu12_short.mat'),'mu12_short','-v7.3')
 save(strcat(jobstring,'_mu13_short.mat'),'mu13_short','-v7.3')
 save(strcat(jobstring,'_mu24_short.mat'),'mu24_short','-v7.3')
 save(strcat(jobstring,'_mu34_short.mat'),'mu34_short','-v7.3')
-save(strcat(jobstring,'_cost_alpha.mat'),'cost_alpha')
-save(strcat(jobstring,'_cost_integral.mat'),'cost_integral')
-
-
-% save(strcat(jobstring,'_final_mu.mat'),'final_mu')
-% initial_V=squeeze(V(1,:,:,:,:));
-% save(strcat(jobstring,'_initial_V.mat'),'initial_V')
-% %save(strcat(jobstring,'_V.mat'),'V','-v7.3')
-% 
-% num_times=floor(num_time_points/1000);
-% mu_short=zeros(num_x,num_y,num_times);
-% for i=1:num_times
-%     mu_short(:,:,i)=mu(i*1000,:,:);
-% end
-% %save(strcat(jobstring,'_mu.mat'),'mu','-v7.3')
-% save(strcat(jobstring,'_mu_short.mat'),'mu_short','-v7.3')
 save(strcat(jobstring,'_integral_values_2.mat'),'integral_values_2')
+end %This ends the while loop
+
+%Final Calculations
+timer=toc
 'Done'
