@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='test' %'february_23_Ex15'
+jobstring='test' %'march_13_Ex1'
 
 %February 22nd: added boolean normalize_weights to make the control an
 %actual weighted average
@@ -94,20 +94,20 @@ initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y
 initial_skew4=false
 initial_skew5=false
 
-num_iterations=40 %TODO
+num_iterations=10 %TODO
 
-alpha_max=1         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=3         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
-sigma=1
+sigma=0.5
 rho_0=0; %ToDo, make 0
-beta=0.9
+beta=0
 
-num_time_points=1001 %12001 %7501 %todo
+num_time_points=1501 %12001 %7501 %todo
 num_y=41 %needs to be odd
 
-delta_x=0.5
-delta_y=0.1
+delta_x=0.05
+delta_y=0.05
 
 box_r=round(1.0/delta_x)
 box_r_y=round(0.5/delta_y)
@@ -148,7 +148,6 @@ elseif initial_skew5
     num_x_one_side=num_x_one_side+box_r;
 end
 num_x=num_x_one_side*2+1;
-num_x
 x_max=(num_x-1)/2*delta_x;
 x_min=-x_max;
 x_max
@@ -441,7 +440,8 @@ mu_short=zeros(num_x,num_y,num_times);
 for i=1:num_times
     mu_short(:,:,i)=mu((i-1)*output_freq+1,:,:);
 end
-%save(strcat(jobstring,'_mu.mat'),'mu','-v7.3')
+% save(strcat(jobstring,'_mu.mat'),'mu','-v7.3')
+% save(strcat(jobstring,'_old_alpha.mat'),'old_alpha','-v7.3')
 save(strcat(jobstring,'_mu_short.mat'),'mu_short','-v7.3')
 save(strcat(jobstring,'_integral_values_2.mat'),'integral_values_2')
 end %This ends the while loop

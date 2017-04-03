@@ -52,7 +52,7 @@ jobstring='test' %'january_24_Ex1_2d'
 % initial_2_boxes puts 2 boxes in quadrants 2 and 4 (with overlap at the
 % origin!)
 
-'CS Cost'
+'CS Cost 2d'
 
 normalize_weights=true
 
@@ -82,11 +82,11 @@ num_iterations=10 %ToDo
 alpha_max=0.1 %todo, 1
 alpha_min=-alpha_max
 
-sigma=0 %0.1 %ToDo!!!!
+sigma=0.1 %0.1 %ToDo!!!!
 rho_0=sigma^2; %ToDo, make 0
 beta=0.6
 
-num_time_points=11
+num_time_points=501
 num_y=11 %needs to be odd
 
 delta_x=0.5
