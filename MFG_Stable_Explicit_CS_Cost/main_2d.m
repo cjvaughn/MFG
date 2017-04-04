@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='test' %'january_24_Ex1_2d'
+jobstring='test' %'april_3_Ex3_2d'
 
 %February 24th: Updating this version to using CS/CM Cost
 
@@ -58,7 +58,7 @@ normalize_weights=true
 
 threshold=10^(-5) %for checking if sum is 1, and alpha<alpha_max, V>0
 normalize=false
-bound_alpha=true
+bound_alpha=false
 
 initial_mu_guess=false
 
@@ -74,23 +74,23 @@ initial_2_boxes=false %birds are in 1 of two boxes in quadrants 2 and 4
 initial_2_points=false %birds are either at (-1,0) or (1,0) (when box_r=100)
 initial_5_points=false %birds are either at (-1,0) (-0.5,0) (0,0) (.5,0) or (1,0) (when box_r=100)
 initial_5_points_xandv=false %birds are either at (-1,.1) (-1,-.1) (0,0) (1,.1) or (1,-.1) (when box_r=100)
-initial_skew=true %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
+initial_skew=false %birds are either at (-1,-.1) (0,0) or (1,.1) (when box_r=100)
 initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=100)
 
-num_iterations=10 %ToDo
+num_iterations=40 %ToDo
 
-alpha_max=0.1 %todo, 1
+alpha_max=3
 alpha_min=-alpha_max
 
-sigma=0.1 %0.1 %ToDo!!!!
-rho_0=sigma^2; %ToDo, make 0
-beta=0.6
+sigma=0.5
+rho_0=0; %sigma^2;
+beta=1
 
-num_time_points=501
-num_y=11 %needs to be odd
+num_time_points=1151
+num_y=16 %needs to be odd
 
-delta_x=0.5
-delta_y=0.05
+delta_x=0.2
+delta_y=0.2
 
 box_r=round(0.25/delta_x)
 box_r_y=round(0.2/delta_y)
@@ -241,9 +241,10 @@ for counter=1:num_time_points-1
             upad=zeros(3*num_x-2,3*num_x-2);
             upad(1:num_x,1:num_x)=u_marg;
             F2_weights=ifftn(fftn(upad).*fftn_vpad_weights);
-            F_weights=F2_weights(num_x:2*num_x-1,num_y:2*num_y-1);
-            F_v1=F_v1./F_weights;
-            F_v2=F_v2./F_weights;
+            F_weights=F2_weights(num_x:2*num_x-1,num_x:2*num_x-1);
+            F_weights_extended=repmat(reshape(F_weights,num_x,1,num_x,1),1,num_y,1,num_y);
+            F_v1=F_v1./F_weights_extended;
+            F_v2=F_v2./F_weights_extended;
         end
     
     alpha_1=-F_v1;
@@ -458,10 +459,10 @@ K=K+1;
 %Saving
 final_mu=squeeze(mu(num_time_points,:,:,:,:)).*(delta_x*delta_y)^2;
 
-mu_12=sum(sum(final_mu,3),4).*(delta_x*delta_y)^2;
-mu_13=squeeze(sum(sum(final_mu,2),4)).*(delta_x*delta_y)^2;
-mu_24=squeeze(sum(sum(final_mu,1),3)).*(delta_x*delta_y)^2;
-mu_34=squeeze(sum(sum(final_mu,1),2)).*(delta_x*delta_y)^2;
+mu_12=sum(sum(final_mu,3),4);
+mu_13=squeeze(sum(sum(final_mu,2),4));
+mu_24=squeeze(sum(sum(final_mu,1),3));
+mu_34=squeeze(sum(sum(final_mu,1),2));
 
 save(strcat(jobstring,'_mu_12.mat'),'mu_12')
 save(strcat(jobstring,'_mu_13.mat'),'mu_13')

@@ -1,8 +1,8 @@
 num_time_points=15001;
-num_x=93; %127; %127; %495; %495; %573; %399; %1567; %787;
-num_y=41; %21; %41;
+num_x=87; %127; %127; %495; %495; %573; %399; %1567; %787;
+num_y=61; %21; %41;
 
-delta_x=0.5;
+delta_x=0.05;
 delta_y=0.05;
 
 x_max=(num_x-1)/2*delta_x;
@@ -80,15 +80,15 @@ else
     title('grad_v V(10000,x,v), beta=1.5')
 end
 
-% Marginals in Velocity
-v1_values=sum(f2,2)';
-v2_values=sum(f2,1);
-y=linspace(-y_max,y_max,num_y);
-plot(y,v1_values)
-% bar(y,v1_values)
-title('mu(T,y1), beta=0')
-xlabel('y1')
-ylabel('mu(T,y1)')
+% % Marginals in Velocity
+% v1_values=sum(f2,2)';
+% v2_values=sum(f2,1);
+% y=linspace(-y_max,y_max,num_y);
+% plot(y,v1_values)
+% % bar(y,v1_values)
+% title('mu(T,y1), beta=0')
+% xlabel('y1')
+% ylabel('mu(T,y1)')
 
 
 %% Attic

@@ -3,7 +3,7 @@ clearvars
 % start the timer
 tic
 % where to save the data
-jobstring='february_24_Ex1'
+jobstring='april_4_Ex1'
 
 %{
 Notes:
@@ -93,7 +93,7 @@ cost_unsq_norm_2=false
 cost_unsq_norm_3=false
 cost_Nourian=true
 % parameter in the flocking cost term
-beta=1.01
+beta=1
 %this is attraction repulsion with exponential weights of absolute value
 %differences
 cost_a_r_exp_abs=false
@@ -122,8 +122,8 @@ bound_alpha=false
 % lambda increases the weight on the flocking cost, F
 % lambda2 is a weight to align the flock to a deterministic path
 % (usually doesn't converge if lambda2>0)
-c=2
-lambda=0.5
+c=3
+lambda=1/3
 lambda2=0
 
 % used to set the starting mu
@@ -156,23 +156,23 @@ num_iterations=40 %ToDo
 % if bound_alpha, this defines the largest possible value for alpha
 % if not bound_alpha, this is the maximum alpha that can be reached to meet
 % the stability condition
-alpha_max=4.5         %previously more_room_factor*sqrt(2)*y_max
+alpha_max=3         %previously more_room_factor*sqrt(2)*y_max
 alpha_min=-alpha_max
 
 % dynamics: dx=v*dt, dy=alpha*dt+sigma*dW (x=position, y=velocity)
-sigma=1
+sigma=0.5
 % rho_0 does nothing. It is the parameter added to the HJB to define V
 % relative to the minimum possible cost
 rho_0=0;
 
 % number of time steps
-num_time_points=2285 %2285 %4569 %9137
+num_time_points=2551
 % number of grid points in y (which determines y_max with delta_y)
-num_y=41 %needs to be odd
+num_y=61 %needs to be odd
 
 % grid size for x and y
-delta_x=0.5
-delta_y=0.15
+delta_x=0.1
+delta_y=0.1
 
 % used in definining initial configurations
 box_r=round(5.0/delta_x)
