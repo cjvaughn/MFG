@@ -1,6 +1,6 @@
 clearvars
 tic
-jobstring='test' %'april_3_Ex1'
+jobstring='april_16_Ex1'
 
 %February 22nd: added boolean normalize_weights to make the control an
 %actual weighted average
@@ -93,7 +93,8 @@ initial_skew2=false %birds are either at (-1,.1) (0,0) or (1,-.1) (when box_r=10
 initial_skew3=false %birds are either at (0,-y) or (0,y) (when box_r_y=y/delta_y)
 initial_skew4=false
 initial_skew5=false
-initial_moving=true
+initial_moving=false
+initial_asymmetrical=true
 
 num_iterations=40 %TODO
 
@@ -104,7 +105,7 @@ sigma=0.5
 rho_0=0; %ToDo, make 0
 beta=1
 
-num_time_points=501
+num_time_points=1901
 num_y=61 %needs to be odd
 
 delta_x=0.05
@@ -212,6 +213,9 @@ elseif initial_skew5
     mu(:,ceil(num_x/2)+box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
 elseif initial_moving
     mu(:,ceil(num_x/2),ceil(num_y/2)+box_r_y)=1/(delta_x*delta_y); %puts everything at (0,box_r_y)
+elseif initial_asymmetrical
+    mu(:,ceil(num_x/2),ceil(num_y/2)-box_r_y)=2/(3*delta_x*delta_y);
+    mu(:,ceil(num_x/2),ceil(num_y/2)+2*box_r_y)=1/(3*delta_x*delta_y);
 else
     mu(:,ceil(num_x/2),ceil(num_y/2))=1/(delta_x*delta_y); %puts everything at the origin.
 end
@@ -346,6 +350,9 @@ elseif initial_skew5
     mu(1,ceil(num_x/2)+box_r,ceil(num_y/2)+box_r_y)=1/(2*delta_x*delta_y);
 elseif initial_moving
     mu(1,ceil(num_x/2),ceil(num_y/2)+box_r_y)=1/(delta_x*delta_y); %puts everything at (0,box_r_y)
+elseif initial_asymmetrical
+    mu(1,ceil(num_x/2),ceil(num_y/2)-box_r_y)=2/(3*delta_x*delta_y);
+    mu(1,ceil(num_x/2),ceil(num_y/2)+2*box_r_y)=1/(3*delta_x*delta_y);
 else
     mu(1,ceil(num_x/2),ceil(num_y/2))=1/(delta_x*delta_y); %puts everything at the origin.
 end

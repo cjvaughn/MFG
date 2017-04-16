@@ -1,8 +1,8 @@
 num_time_points=2501;
-num_x=33; %495; %495; %573; %399; %1567; %787;
-num_y=41;
+num_x=23; %495; %495; %573; %399; %1567; %787;
+num_y=61;
 
-delta_x=0.5;
+delta_x=0.05;
 delta_y=0.05;
 
 x_max=(num_x-1)/2*delta_x;
